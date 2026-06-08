@@ -89,7 +89,7 @@
   /* Workout type cards */
   .workout-picker {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 12px;
     margin-bottom: 28px;
   }
@@ -218,6 +218,10 @@
   .tag { font-size: 10px; padding: 2px 8px; border-radius: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
   .tag-compound  { background: rgba(10,132,255,0.15);  color: #0a84ff; }
   .tag-isolation { background: rgba(50,215,75,0.15);   color: #32d74b; }
+  .tag-superset  { background: rgba(191,90,242,0.15);  color: #bf5af2; }
+  .tag-finisher  { background: rgba(255,69,58,0.15);   color: #ff453a; }
+  .superset-moves { font-size: 12px; color: var(--text2); margin-top: 2px; letter-spacing: 0.1px; }
+  .superset-moves .ss-sep { color: var(--accent); margin: 0 4px; font-weight: 700; }
   .tag-sets      { background: rgba(191,90,242,0.15);  color: #bf5af2; }
 
   .exercise-meta-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
@@ -500,10 +504,49 @@
     .workout-picker { grid-template-columns: 1fr; }
     .plan-stats { flex-wrap: wrap; }
     #history-panel { width: 100%; }
+    /* Trends panel — full width on mobile */
+    #trends-panel { width: 100%; border-left: none; border-top: 0.5px solid var(--sep); }
+    /* Timer — wrap preset buttons onto second line */
+    .timer-bar { flex-wrap: wrap; gap: 10px; }
+    .timer-actions { flex-wrap: wrap; gap: 4px; }
+    #timer-toggle-btn { flex: 1; }
+    /* Header — tighter buttons */
+    .header-actions .btn-ghost { padding: 6px 10px; font-size: 12px; }
+    /* Trend tabs — wrap if needed */
+    .trends-type-tabs { flex-wrap: wrap; }
+    /* Set inputs — slightly narrower to fit table */
+    .set-input { width: 75px; }
+    /* Workout meta — full width groups */
+    .workout-meta { flex-direction: column; }
+  }
+
+  /* ── Portrait-only lock ─────────────────────────────────────────────────── */
+  .rotate-msg {
+    display: none;
+    position: fixed; inset: 0; z-index: 9999;
+    background: #000;
+    flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 14px; text-align: center; padding: 28px;
+  }
+  .rotate-icon { font-size: 54px; animation: tilt 1.8s ease-in-out infinite alternate; }
+  @keyframes tilt { from { transform: rotate(-20deg); } to { transform: rotate(20deg); } }
+  .rotate-msg h2 { font-size: 18px; font-weight: 700; color: #fff; }
+  .rotate-msg p  { font-size: 14px; color: rgba(235,235,245,0.6); }
+
+  @media screen and (orientation: landscape) and (max-width: 1024px) {
+    .rotate-msg { display: flex; }
   }
 </style>
 </head>
 <body>
+
+<!-- Portrait-only lock overlay -->
+<div class="rotate-msg">
+  <div class="rotate-icon">📱</div>
+  <h2>Rotate your device</h2>
+  <p>Dr.G Gym is portrait mode only</p>
+</div>
 
 <header>
   <div class="logo">
@@ -542,6 +585,12 @@
       <span class="card-emoji">🔥</span>
       <div class="card-title">Full Body</div>
       <div class="card-desc">Complete Head-to-Toe Session</div>
+    </div>
+    <div class="workout-card" data-type="group_a" onclick="selectType('group_a')">
+      <div class="card-badge">✓ Selected</div>
+      <span class="card-emoji">🅰️</span>
+      <div class="card-title">Group A</div>
+      <div class="card-desc">Fixed Program · Push/Pull/Legs</div>
     </div>
   </div>
 
@@ -674,6 +723,7 @@
     <button class="trend-tab active" data-type="upper" onclick="selectTrendType('upper')">💪 Upper</button>
     <button class="trend-tab" data-type="lower" onclick="selectTrendType('lower')">🦵 Lower</button>
     <button class="trend-tab" data-type="full" onclick="selectTrendType('full')">🔥 Full</button>
+    <button class="trend-tab" data-type="group_a" onclick="selectTrendType('group_a')">🅰️ Group A</button>
   </div>
   <div id="trends-body"></div>
 </div>
@@ -735,6 +785,14 @@ const EXERCISES = {
     { name: 'Standing Calf Raises', muscles: 'Gastrocnemius, Soleus', type: 'isolation', sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '10-12', hypertrophy: '12-15', endurance: '20-25' } },
     { name: 'Seated Calf Raises', muscles: 'Soleus', type: 'isolation', sets: { beginner: 2, intermediate: 3, advanced: 3 }, reps: { strength: '10-12', hypertrophy: '15-20', endurance: '20-25' } },
   ],
+  group_a: [
+    { name: 'Low Incline Chest Press', muscles: 'Upper Chest, Triceps, Front Delt', type: 'compound', sets: { beginner: 3, intermediate: 4, advanced: 5 }, reps: { strength: '4-6', hypertrophy: '8-12', endurance: '12-15' } },
+    { name: 'Weighted Squat',          muscles: 'Quads, Glutes, Core',              type: 'compound', sets: { beginner: 3, intermediate: 4, advanced: 5 }, reps: { strength: '4-6', hypertrophy: '8-12', endurance: '12-15' } },
+    { name: 'Pull-Up (Neutral Grip)',  muscles: 'Lats, Biceps, Rhomboids',          type: 'compound', sets: { beginner: 3, intermediate: 4, advanced: 4 }, reps: { strength: '4-6', hypertrophy: '6-8',  endurance: '10-12' } },
+    { name: 'RDL',                     muscles: 'Hamstrings, Glutes, Lower Back',   type: 'compound', sets: { beginner: 3, intermediate: 4, advanced: 4 }, reps: { strength: '4-6', hypertrophy: '8-10', endurance: '12-15' } },
+    { name: 'Cable Row',               muscles: 'Back, Biceps, Rear Delt',          type: 'compound', sets: { beginner: 3, intermediate: 4, advanced: 4 }, reps: { strength: '4-6', hypertrophy: '10-12', endurance: '12-15' } },
+    { name: 'Lateral Raise Superset',  muscles: 'Side Delts, Rear Delts, Upper Back', type: 'isolation', superset: ['Y-Shape Raise', 'Rear Delt Fly'], sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '10-12', hypertrophy: '12-15', endurance: '15-20' } },
+  ],
   full: [
     { name: 'Deadlift', muscles: 'Full Posterior Chain', type: 'compound', sets: { beginner: 3, intermediate: 4, advanced: 5 }, reps: { strength: '3-5', hypertrophy: '6-8', endurance: '10-12' } },
     { name: 'Barbell Squat', muscles: 'Quads, Glutes, Core', type: 'compound', sets: { beginner: 3, intermediate: 4, advanced: 4 }, reps: { strength: '4-6', hypertrophy: '8-10', endurance: '12-15' } },
@@ -749,6 +807,12 @@ const EXERCISES = {
   ],
 };
 
+const FINISHERS_A = [
+  { name: 'Dead Bug',    muscles: 'Core, Hip Flexors',   type: 'isolation', finisher: true, sets: { beginner: 3, intermediate: 3, advanced: 3 }, reps: { strength: '6-8',   hypertrophy: '8-10',  endurance: '10-12' } },
+  { name: 'Calf Raises', muscles: 'Gastrocnemius, Soleus', type: 'isolation', finisher: true, sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '10-12', hypertrophy: '15-20', endurance: '20-25' } },
+  { name: 'Arm Superset', muscles: 'Biceps, Triceps',    type: 'isolation', finisher: true, superset: ['Bicep Curls', 'Tricep Pushdowns'], sets: { beginner: 2, intermediate: 3, advanced: 3 }, reps: { strength: '8-10', hypertrophy: '10-12', endurance: '12-15' } },
+];
+
 const GOAL_PARAMS = {
   strength:    { setsMulti: 1.0, label: 'Strength – Heavy loads, low reps' },
   hypertrophy: { setsMulti: 1.1, label: 'Hypertrophy – Moderate load, controlled reps' },
@@ -756,15 +820,16 @@ const GOAL_PARAMS = {
 };
 
 const TYPE_COUNTS = {
-  beginner:     { upper: 5, lower: 5, full: 6 },
-  intermediate: { upper: 7, lower: 7, full: 8 },
-  advanced:     { upper: 9, lower: 9, full: 10 },
+  beginner:     { upper: 5, lower: 5, full: 6,  group_a: 7 },
+  intermediate: { upper: 7, lower: 7, full: 8,  group_a: 7 },
+  advanced:     { upper: 9, lower: 9, full: 10, group_a: 7 },
 };
 
 const TYPE_NAMES = {
-  upper: { title: 'Upper Body Workout', emoji: '💪' },
-  lower: { title: 'Lower Body Workout', emoji: '🦵' },
-  full:  { title: 'Full Body Workout',  emoji: '🔥' },
+  upper:   { title: 'Upper Body Workout', emoji: '💪' },
+  lower:   { title: 'Lower Body Workout', emoji: '🦵' },
+  full:    { title: 'Full Body Workout',  emoji: '🔥' },
+  group_a: { title: 'Group A Workout',    emoji: '🅰️' },
 };
 
 // ─── Swap Recommendations ────────────────────────────────────────────────────
@@ -794,6 +859,15 @@ const SWAPS = {
   'Dumbbell Row':           { similar: [{ name: 'Barbell Row', muscles: 'Back, Biceps, Rear Delt', type: 'compound' }, { name: 'Seated Cable Row', muscles: 'Back, Biceps', type: 'compound' }], easier: { name: 'Machine Row', muscles: 'Back, Biceps', type: 'compound' } },
   'Dips':                   { similar: [{ name: 'Close-Grip Bench Press', muscles: 'Chest, Triceps, Shoulders', type: 'compound' }, { name: 'Diamond Push-Ups', muscles: 'Triceps, Chest', type: 'compound' }], easier: { name: 'Assisted Dips', muscles: 'Chest, Triceps, Shoulders', type: 'compound' } },
   'Plank':                  { similar: [{ name: 'Dead Bug', muscles: 'Core, Shoulders', type: 'isolation' }, { name: 'Hollow Hold', muscles: 'Core, Hip Flexors', type: 'isolation' }], easier: { name: 'Knee Plank', muscles: 'Core', type: 'isolation' } },
+  'Low Incline Chest Press':{ similar: [{ name: 'Incline Dumbbell Press', muscles: 'Upper Chest, Triceps', type: 'compound' }, { name: 'Incline Cable Press', muscles: 'Upper Chest, Triceps', type: 'compound' }], easier: { name: 'Incline Push-Ups', muscles: 'Upper Chest, Triceps', type: 'compound' } },
+  'Weighted Squat':         { similar: [{ name: 'Goblet Squat', muscles: 'Quads, Glutes, Core', type: 'compound' }, { name: 'Hack Squat', muscles: 'Quads, Glutes', type: 'compound' }], easier: { name: 'Leg Press', muscles: 'Quads, Glutes', type: 'compound' } },
+  'Pull-Up (Neutral Grip)': { similar: [{ name: 'Inverted Row', muscles: 'Back, Biceps, Rear Delt', type: 'compound' }, { name: 'Lat Pulldown (Neutral)', muscles: 'Lats, Biceps', type: 'compound' }], easier: { name: 'Inverted Row', muscles: 'Back, Biceps, Rear Delt', type: 'compound' } },
+  'RDL':                    { similar: [{ name: 'Stiff-Leg Deadlift', muscles: 'Hamstrings, Glutes, Lower Back', type: 'compound' }, { name: 'Good Mornings', muscles: 'Hamstrings, Lower Back, Glutes', type: 'compound' }], easier: { name: 'Dumbbell RDL', muscles: 'Hamstrings, Glutes', type: 'compound' } },
+  'Cable Row':              { similar: [{ name: 'Barbell Row', muscles: 'Back, Biceps, Rear Delt', type: 'compound' }, { name: 'Dumbbell Row', muscles: 'Back, Biceps', type: 'compound' }], easier: { name: 'Machine Row', muscles: 'Back, Biceps', type: 'compound' } },
+  'Lateral Raise Superset': { similar: [{ name: 'Cable Lateral Raise', muscles: 'Side Delts', type: 'isolation' }, { name: 'Dumbbell Lateral Raise', muscles: 'Side Delts', type: 'isolation' }], easier: { name: 'Band Lateral Raise', muscles: 'Side Delts', type: 'isolation' } },
+  'Dead Bug':               { similar: [{ name: 'Plank', muscles: 'Core, Shoulders', type: 'isolation' }, { name: 'Hollow Hold', muscles: 'Core, Hip Flexors', type: 'isolation' }], easier: { name: 'Knee Plank', muscles: 'Core', type: 'isolation' } },
+  'Calf Raises':            { similar: [{ name: 'Standing Calf Raises', muscles: 'Gastrocnemius, Soleus', type: 'isolation' }, { name: 'Seated Calf Raises', muscles: 'Soleus', type: 'isolation' }], easier: { name: 'Band Calf Raises', muscles: 'Calves', type: 'isolation' } },
+  'Arm Superset':           { similar: [{ name: 'Bicep Curls', muscles: 'Biceps, Brachialis', type: 'isolation' }, { name: 'Tricep Pushdowns', muscles: 'Triceps', type: 'isolation' }], easier: { name: 'Cable Curls', muscles: 'Biceps', type: 'isolation' } },
 };
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -853,6 +927,25 @@ function selectUnit(unit) {
 
 function generateWorkout(shuffled = false) {
   if (!selectedType) { toast('Pick a workout type first!'); return; }
+
+  if (selectedType === 'group_a') {
+    const finisher = FINISHERS_A[Math.floor(Math.random() * FINISHERS_A.length)];
+    const chosen   = [...EXERCISES.group_a, finisher];
+    currentPlan = chosen.map(ex => {
+      const numSets = Math.round(ex.sets[selectedDiff] * GOAL_PARAMS[selectedGoal].setsMulti);
+      const prev = getPrevSession(ex.name);
+      return {
+        exercise: ex,
+        sets: Array.from({ length: numSets }, (_, si) => ({
+          weight: prev && prev.sets[si] ? convertWeight(prev.sets[si].weight, prev.unit, selectedUnit) : '',
+          reps: '',
+          done: false,
+        })),
+      };
+    });
+    renderPlan();
+    return;
+  }
 
   const pool  = [...EXERCISES[selectedType]];
   const count = TYPE_COUNTS[selectedDiff][selectedType];
@@ -929,17 +1022,20 @@ function renderExercise(container, item, idx) {
   const repTarget = ex.reps[selectedGoal];
   const setCount  = sets.length;
 
+  const supersetHtml = ex.superset
+    ? `<div class="superset-moves">${ex.superset.join('<span class="ss-sep"> + </span>')}</div>` : '';
+  const typeTag = ex.superset ? `<span class="tag tag-superset">Superset</span>`
+    : ex.finisher ? `<span class="tag tag-finisher">Finisher</span>`
+    : `<span class="tag ${ex.type === 'compound' ? 'tag-compound' : 'tag-isolation'}">${ex.type}</span>`;
+
   card.innerHTML = `
     <div class="exercise-header" onclick="toggleCard(${idx})">
       <div class="exercise-num">${idx + 1}</div>
       <div class="exercise-info">
         <div class="exercise-name">${ex.name}</div>
+        ${supersetHtml}
         <div class="exercise-muscles">${ex.muscles}</div>
-        <div class="exercise-tags">
-          <span class="tag ${ex.type === 'compound' ? 'tag-compound' : 'tag-isolation'}">
-            ${ex.type}
-          </span>
-        </div>
+        <div class="exercise-tags">${typeTag}</div>
       </div>
       <div class="exercise-meta-right">
         <div class="target-sets">
@@ -1576,7 +1672,8 @@ function renderTrends() {
   const body  = document.getElementById('trends-body');
 
   if (allEx.length === 0) {
-    body.innerHTML = `<div class="trends-empty">No ${trendType === 'full' ? 'full body' : trendType + ' body'} sessions saved yet.<br>Complete and save a workout to see trends.</div>`;
+    const trendLabel = trendType === 'full' ? 'full body' : trendType === 'group_a' ? 'Group A' : trendType + ' body';
+    body.innerHTML = `<div class="trends-empty">No ${trendLabel} sessions saved yet.<br>Complete and save a workout to see trends.</div>`;
     return;
   }
 
@@ -1669,9 +1766,10 @@ function buildTrendSVG(data, showEx, allEx) {
       const cx  = xP(p.date.getTime()).toFixed(1);
       const cy  = yP(p.volume).toFixed(1);
       const lbl = `${ex}  •  ${p.volume.toLocaleString()} ${selectedUnit}  •  ${p.date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
-      dots += `<circle cx="${cx}" cy="${cy}" r="4.5" fill="${color}" clip-path="url(#cc)" style="cursor:pointer"
+      dots += `<circle cx="${cx}" cy="${cy}" r="7" fill="${color}" clip-path="url(#cc)" style="cursor:pointer"
         onmouseenter="showTrendTip(event,${JSON.stringify(lbl)})"
-        onmouseleave="hideTrendTip()"/>`;
+        onmouseleave="hideTrendTip()"
+        ontouchstart="toggleTrendTip(event,${JSON.stringify(lbl)})" ontouchend="event.preventDefault()"/>`;
     });
   });
 
@@ -1693,6 +1791,22 @@ function moveTrendTip(e) {
 }
 function hideTrendTip() {
   document.getElementById('trend-tooltip').style.display = 'none';
+}
+function toggleTrendTip(e, text) {
+  const tip = document.getElementById('trend-tooltip');
+  const touch = e.touches[0];
+  if (tip.style.display === 'block' && tip.textContent === text) {
+    tip.style.display = 'none';
+  } else {
+    tip.textContent = text;
+    tip.style.display = 'block';
+    const x = touch.clientX, y = touch.clientY - 56;
+    tip.style.left = Math.min(x - tip.offsetWidth / 2, window.innerWidth - tip.offsetWidth - 8) + 'px';
+    tip.style.top  = Math.max(y, 8) + 'px';
+    // auto-hide after 3s on touch devices
+    clearTimeout(tip._t);
+    tip._t = setTimeout(() => tip.style.display = 'none', 3000);
+  }
 }
 
 // ─── Calendar ────────────────────────────────────────────────────────────────
@@ -1821,8 +1935,52 @@ function generateAppIcon() {
   if (link) link.href = canvas.toDataURL('image/png');
 }
 
+// ─── Orientation / session restore ───────────────────────────────────────────
+
+function saveSessionState() {
+  try {
+    sessionStorage.setItem('gymgen-session', JSON.stringify({
+      currentPlan, selectedType, selectedDiff, selectedGoal, selectedUnit,
+    }));
+  } catch {}
+}
+
+function restoreSessionState() {
+  try {
+    const raw = sessionStorage.getItem('gymgen-session');
+    if (!raw) return;
+    sessionStorage.removeItem('gymgen-session');
+    const s = JSON.parse(raw);
+    selectedType = s.selectedType;
+    selectedDiff = s.selectedDiff;
+    selectedGoal = s.selectedGoal;
+    selectedUnit = s.selectedUnit;
+    currentPlan  = s.currentPlan || [];
+    // Re-sync pill / card UI without triggering conversions
+    document.querySelectorAll('.workout-card').forEach(c =>
+      c.classList.toggle('active', c.dataset.type === selectedType));
+    document.querySelectorAll('[data-diff]').forEach(p =>
+      p.classList.toggle('active', p.dataset.diff === selectedDiff));
+    document.querySelectorAll('[data-goal]').forEach(p =>
+      p.classList.toggle('active', p.dataset.goal === selectedGoal));
+    document.querySelectorAll('[data-unit]').forEach(p =>
+      p.classList.toggle('active', p.dataset.unit === selectedUnit));
+    if (currentPlan.length > 0) renderPlan();
+  } catch { sessionStorage.removeItem('gymgen-session'); }
+}
+
+// Save state entering landscape; reload (restoring state) returning to portrait
+let _wasLandscape = window.innerWidth > window.innerHeight;
+window.addEventListener('resize', () => {
+  const landscape = window.innerWidth > window.innerHeight;
+  if (landscape && !_wasLandscape) saveSessionState();
+  if (!landscape && _wasLandscape) location.reload();
+  _wasLandscape = landscape;
+});
+
 // ─── Init ────────────────────────────────────────────────────────────────────
 
+restoreSessionState();
 renderTimer();
 renderCalendar();
 initFileSync();
