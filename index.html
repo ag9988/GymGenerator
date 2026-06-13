@@ -382,6 +382,33 @@
   .swap-replacing { font-size: 13px; color: var(--text2); margin-bottom: 18px; }
   .swap-replacing strong { color: var(--text); }
   .swap-options { display: flex; flex-direction: column; gap: 8px; }
+  .add-ex-search {
+    width: 100%; box-sizing: border-box;
+    background: var(--surface2); border: none; border-radius: 10px;
+    padding: 10px 14px; color: #fff; font-size: 15px;
+    margin-bottom: 16px; outline: none;
+  }
+  .add-ex-search::placeholder { color: var(--text3); }
+  .add-ex-group-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
+    color: var(--text3); padding: 12px 0 6px;
+  }
+  .add-ex-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--sep); cursor: pointer; gap: 12px;
+  }
+  .add-ex-row:active { opacity: 0.6; }
+  .add-ex-row .ex-info { flex: 1; min-width: 0; }
+  .add-ex-row .ex-name { font-size: 15px; font-weight: 600; color: #fff; }
+  .add-ex-row .ex-muscles { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .add-ex-row .ex-add-btn { font-size: 22px; color: var(--accent); flex-shrink: 0; line-height: 1; }
+  .btn-add-exercise {
+    display: block; width: 100%; margin-top: 16px;
+    background: var(--surface); border: 1.5px dashed var(--sep);
+    border-radius: 14px; padding: 14px; color: var(--accent);
+    font-size: 15px; font-weight: 600; cursor: pointer; letter-spacing: 0.1px;
+  }
+  .btn-add-exercise:active { opacity: 0.7; }
   .swap-option {
     background: var(--surface2); border: none; border-radius: 14px;
     padding: 14px 16px; cursor: pointer;
@@ -743,6 +770,18 @@
 </div>
 
 <!-- Swap Modal -->
+<div id="add-exercise-modal" class="swap-modal" onclick="if(event.target===this)closeAddExercise()">
+  <div class="swap-modal-inner">
+    <div class="swap-modal-header">
+      <h3>Add Exercise</h3>
+      <button class="close-btn" onclick="closeAddExercise()">×</button>
+    </div>
+    <input type="text" id="add-ex-search" class="add-ex-search" placeholder="Search by name or muscle…"
+           oninput="filterAddExercise(this.value)" autocomplete="off" autocorrect="off" />
+    <div id="add-ex-list"></div>
+  </div>
+</div>
+
 <div id="swap-modal" class="swap-modal" onclick="if(event.target===this)closeSwap()">
   <div class="swap-modal-inner">
     <div class="swap-modal-header">
@@ -811,6 +850,57 @@ const FINISHERS_A = [
   { name: 'Dead Bug',    muscles: 'Core, Hip Flexors',   type: 'isolation', finisher: true, sets: { beginner: 3, intermediate: 3, advanced: 3 }, reps: { strength: '6-8',   hypertrophy: '8-10',  endurance: '10-12' } },
   { name: 'Calf Raises', muscles: 'Gastrocnemius, Soleus', type: 'isolation', finisher: true, sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '10-12', hypertrophy: '15-20', endurance: '20-25' } },
   { name: 'Arm Superset', muscles: 'Biceps, Triceps',    type: 'isolation', finisher: true, superset: ['Bicep Curls', 'Tricep Pushdowns'], sets: { beginner: 2, intermediate: 3, advanced: 3 }, reps: { strength: '8-10', hypertrophy: '10-12', endurance: '12-15' } },
+];
+
+// ─── Exercise Catalog (all exercises, grouped by body part) ──────────────────
+const EXERCISE_CATALOG = [
+  { group: '💪 Chest', exercises: [
+    { name: 'Bench Press',             muscles: 'Chest, Triceps, Front Delt',         type: 'compound',  sets: { beginner: 3, intermediate: 4, advanced: 5 }, reps: { strength: '3-5',   hypertrophy: '8-12',  endurance: '15-20' } },
+    { name: 'Incline Dumbbell Press',  muscles: 'Upper Chest, Triceps',               type: 'compound',  sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '4-6',   hypertrophy: '10-12', endurance: '15-20' } },
+    { name: 'Low Incline Chest Press', muscles: 'Upper Chest, Triceps, Front Delt',   type: 'compound',  sets: { beginner: 3, intermediate: 4, advanced: 5 }, reps: { strength: '4-6',   hypertrophy: '8-12',  endurance: '12-15' } },
+    { name: 'Cable Flyes',             muscles: 'Chest',                              type: 'isolation', sets: { beginner: 2, intermediate: 3, advanced: 3 }, reps: { strength: '10-12', hypertrophy: '12-15', endurance: '15-20' } },
+    { name: 'Dips',                    muscles: 'Chest, Triceps, Shoulders',          type: 'compound',  sets: { beginner: 2, intermediate: 3, advanced: 3 }, reps: { strength: '5-6',   hypertrophy: '8-12',  endurance: '12-15' } },
+  ]},
+  { group: '🏋️ Back', exercises: [
+    { name: 'Pull-Ups / Lat Pulldown', muscles: 'Lats, Biceps, Rhomboids',           type: 'compound',  sets: { beginner: 3, intermediate: 4, advanced: 4 }, reps: { strength: '4-6',   hypertrophy: '8-10',  endurance: '12-15' } },
+    { name: 'Pull-Up (Neutral Grip)',  muscles: 'Lats, Biceps, Rhomboids',           type: 'compound',  sets: { beginner: 3, intermediate: 4, advanced: 4 }, reps: { strength: '4-6',   hypertrophy: '6-8',   endurance: '10-12' } },
+    { name: 'Barbell Row',             muscles: 'Back, Biceps, Rear Delt',           type: 'compound',  sets: { beginner: 3, intermediate: 4, advanced: 5 }, reps: { strength: '4-6',   hypertrophy: '8-12',  endurance: '12-15' } },
+    { name: 'Dumbbell Row',            muscles: 'Back, Biceps',                      type: 'compound',  sets: { beginner: 2, intermediate: 3, advanced: 3 }, reps: { strength: '6-8',   hypertrophy: '10-12', endurance: '12-15' } },
+    { name: 'Cable Row',               muscles: 'Back, Biceps, Rear Delt',           type: 'compound',  sets: { beginner: 3, intermediate: 4, advanced: 4 }, reps: { strength: '4-6',   hypertrophy: '10-12', endurance: '12-15' } },
+    { name: 'Face Pulls',              muscles: 'Rear Delts, External Rotators',     type: 'isolation', sets: { beginner: 2, intermediate: 3, advanced: 3 }, reps: { strength: '12-15', hypertrophy: '15-20', endurance: '20-25' } },
+  ]},
+  { group: '🔝 Shoulders', exercises: [
+    { name: 'Overhead Press',          muscles: 'Shoulders, Triceps, Traps',         type: 'compound',  sets: { beginner: 3, intermediate: 4, advanced: 4 }, reps: { strength: '3-5',   hypertrophy: '8-10',  endurance: '12-15' } },
+    { name: 'Lateral Raises',          muscles: 'Side Delts',                        type: 'isolation', sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '10-12', hypertrophy: '12-15', endurance: '15-20' } },
+    { name: 'Lateral Raise Superset',  muscles: 'Side Delts, Rear Delts, Upper Back', type: 'isolation', superset: ['Y-Shape Raise', 'Rear Delt Fly'], sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '10-12', hypertrophy: '12-15', endurance: '15-20' } },
+  ]},
+  { group: '💪 Arms', exercises: [
+    { name: 'Bicep Curls',             muscles: 'Biceps, Brachialis',                type: 'isolation', sets: { beginner: 2, intermediate: 3, advanced: 4 }, reps: { strength: '6-8',   hypertrophy: '10-12', endurance: '15-20' } },
+    { name: 'Tricep Pushdowns',        muscles: 'Triceps',                           type: 'isolation', sets: { beginner: 2, intermediate: 3, advanced: 4 }, reps: { strength: '8-10',  hypertrophy: '10-15', endurance: '15-20' } },
+    { name: 'Arm Superset',            muscles: 'Biceps, Triceps',                   type: 'isolation', superset: ['Bicep Curls', 'Tricep Pushdowns'], sets: { beginner: 2, intermediate: 3, advanced: 3 }, reps: { strength: '8-10', hypertrophy: '10-12', endurance: '12-15' } },
+  ]},
+  { group: '🦵 Legs', exercises: [
+    { name: 'Barbell Squat',           muscles: 'Quads, Glutes, Core',               type: 'compound',  sets: { beginner: 3, intermediate: 4, advanced: 5 }, reps: { strength: '3-5',   hypertrophy: '6-10',  endurance: '12-15' } },
+    { name: 'Weighted Squat',          muscles: 'Quads, Glutes, Core',               type: 'compound',  sets: { beginner: 3, intermediate: 4, advanced: 5 }, reps: { strength: '4-6',   hypertrophy: '8-12',  endurance: '12-15' } },
+    { name: 'Romanian Deadlift',       muscles: 'Hamstrings, Glutes, Lower Back',    type: 'compound',  sets: { beginner: 3, intermediate: 4, advanced: 4 }, reps: { strength: '4-6',   hypertrophy: '8-10',  endurance: '12-15' } },
+    { name: 'RDL',                     muscles: 'Hamstrings, Glutes, Lower Back',    type: 'compound',  sets: { beginner: 3, intermediate: 4, advanced: 4 }, reps: { strength: '4-6',   hypertrophy: '8-10',  endurance: '12-15' } },
+    { name: 'Leg Press',               muscles: 'Quads, Glutes',                     type: 'compound',  sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '6-8',   hypertrophy: '10-15', endurance: '15-20' } },
+    { name: 'Bulgarian Split Squat',   muscles: 'Quads, Glutes, Hip Flexors',        type: 'compound',  sets: { beginner: 2, intermediate: 3, advanced: 4 }, reps: { strength: '5-6',   hypertrophy: '8-12',  endurance: '12-15' } },
+    { name: 'Hip Thrust',              muscles: 'Glutes, Hamstrings',                type: 'compound',  sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '6-8',   hypertrophy: '10-15', endurance: '15-20' } },
+    { name: 'Walking Lunges',          muscles: 'Quads, Glutes, Calves',             type: 'compound',  sets: { beginner: 2, intermediate: 3, advanced: 3 }, reps: { strength: '8-10',  hypertrophy: '12-16', endurance: '16-20' } },
+    { name: 'Leg Curl',                muscles: 'Hamstrings',                        type: 'isolation', sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '8-10',  hypertrophy: '10-15', endurance: '15-20' } },
+    { name: 'Leg Extension',           muscles: 'Quads (VMO focus)',                 type: 'isolation', sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '8-10',  hypertrophy: '10-15', endurance: '15-20' } },
+  ]},
+  { group: '🧘 Core & Calves', exercises: [
+    { name: 'Plank',                   muscles: 'Core, Shoulders',                   type: 'isolation', sets: { beginner: 3, intermediate: 3, advanced: 3 }, reps: { strength: '30s',   hypertrophy: '45s',   endurance: '60s'   } },
+    { name: 'Dead Bug',                muscles: 'Core, Hip Flexors',                 type: 'isolation', sets: { beginner: 3, intermediate: 3, advanced: 3 }, reps: { strength: '6-8',   hypertrophy: '8-10',  endurance: '10-12' } },
+    { name: 'Standing Calf Raises',    muscles: 'Gastrocnemius, Soleus',             type: 'isolation', sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '10-12', hypertrophy: '12-15', endurance: '20-25' } },
+    { name: 'Seated Calf Raises',      muscles: 'Soleus',                            type: 'isolation', sets: { beginner: 2, intermediate: 3, advanced: 3 }, reps: { strength: '10-12', hypertrophy: '15-20', endurance: '20-25' } },
+    { name: 'Calf Raises',             muscles: 'Gastrocnemius, Soleus',             type: 'isolation', sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '10-12', hypertrophy: '15-20', endurance: '20-25' } },
+  ]},
+  { group: '🔥 Full Body', exercises: [
+    { name: 'Deadlift',                muscles: 'Full Posterior Chain',              type: 'compound',  sets: { beginner: 3, intermediate: 4, advanced: 5 }, reps: { strength: '3-5',   hypertrophy: '6-8',   endurance: '10-12' } },
+  ]},
 ];
 
 const GOAL_PARAMS = {
@@ -1006,6 +1096,13 @@ function renderPlan() {
 
   list.innerHTML = '';
   currentPlan.forEach((item, idx) => renderExercise(list, item, idx));
+
+  // "+ Add Exercise" button below the list
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn-add-exercise';
+  addBtn.textContent = '+ Add Exercise';
+  addBtn.onclick = openAddExercise;
+  list.appendChild(addBtn);
 
   plan.style.display = 'block';
   document.getElementById('timer-bar').classList.add('visible');
@@ -1397,6 +1494,81 @@ function confirmSwap(optIdx) {
 function closeSwap() {
   document.getElementById('swap-modal').classList.remove('open');
   swapTarget = null;
+}
+
+// ─── Add Exercise ────────────────────────────────────────────────────────────
+
+function openAddExercise() {
+  document.getElementById('add-ex-search').value = '';
+  renderAddExList('');
+  document.getElementById('add-exercise-modal').classList.add('open');
+  setTimeout(() => document.getElementById('add-ex-search').focus(), 80);
+}
+
+function closeAddExercise() {
+  document.getElementById('add-exercise-modal').classList.remove('open');
+}
+
+function filterAddExercise(query) {
+  renderAddExList(query.toLowerCase());
+}
+
+function renderAddExList(filter) {
+  const container = document.getElementById('add-ex-list');
+  const alreadyIn = new Set(currentPlan.map(i => i.exercise.name));
+  let html = '';
+
+  EXERCISE_CATALOG.forEach(({ group, exercises }) => {
+    const matches = exercises.filter(ex =>
+      !filter ||
+      ex.name.toLowerCase().includes(filter) ||
+      ex.muscles.toLowerCase().includes(filter)
+    );
+    if (!matches.length) return;
+
+    html += `<div class="add-ex-group-label">${group}</div>`;
+    matches.forEach(ex => {
+      const dimStyle = alreadyIn.has(ex.name) ? ' style="opacity:0.38"' : '';
+      const supersetLine = ex.superset
+        ? `<div class="superset-moves" style="margin-top:2px">${ex.superset.join('<span class="ss-sep"> + </span>')}</div>` : '';
+      html += `
+        <div class="add-ex-row"${dimStyle} onclick="addExerciseToPlan(${JSON.stringify(ex.name)})">
+          <div class="ex-info">
+            <div class="ex-name">${ex.name}</div>
+            ${supersetLine}
+            <div class="ex-muscles">${ex.muscles}</div>
+          </div>
+          <div class="ex-add-btn">＋</div>
+        </div>`;
+    });
+  });
+
+  container.innerHTML = html ||
+    `<div style="color:var(--text3);padding:24px 0;text-align:center">No exercises found</div>`;
+}
+
+function addExerciseToPlan(name) {
+  let ex = null;
+  for (const { exercises } of EXERCISE_CATALOG) {
+    const found = exercises.find(e => e.name === name);
+    if (found) { ex = found; break; }
+  }
+  if (!ex) return;
+
+  const numSets = Math.round(ex.sets[selectedDiff] * GOAL_PARAMS[selectedGoal].setsMulti);
+  const prev = getPrevSession(name);
+  currentPlan.push({
+    exercise: ex,
+    sets: Array.from({ length: numSets }, (_, si) => ({
+      weight: prev && prev.sets[si] ? convertWeight(prev.sets[si].weight, prev.unit, selectedUnit) : '',
+      reps: '',
+      done: false,
+    })),
+  });
+
+  closeAddExercise();
+  renderPlan();
+  toast(`${name} added 💪`);
 }
 
 // ─── Misc ────────────────────────────────────────────────────────────────────
