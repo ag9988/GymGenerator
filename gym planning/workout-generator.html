@@ -521,6 +521,28 @@
     z-index: 200; flex-direction: column; box-shadow: -20px 0 60px rgba(0,0,0,0.6);
   }
   #trends-panel.open { display: flex; }
+  #pr-panel {
+    display: none; position: fixed; right: 0; top: 0; bottom: 0; width: 380px;
+    background: var(--surface); border-left: 0.5px solid var(--sep);
+    z-index: 200; flex-direction: column; overflow-y: auto;
+    box-shadow: -20px 0 60px rgba(0,0,0,0.6);
+  }
+  #pr-panel.open { display: flex; }
+  .pr-panel-body { padding: 16px 20px 40px; display: flex; flex-direction: column; gap: 12px; }
+  .pr-empty { color: var(--text3); font-size: 14px; text-align: center; padding: 40px 0; }
+  .pr-card {
+    background: var(--surface2); border-radius: 16px; padding: 14px 16px;
+  }
+  .pr-card-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+  .pr-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .pr-stat {
+    background: var(--surface); border-radius: 12px; padding: 10px 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center;
+  }
+  .pr-stat-icon { font-size: 16px; line-height: 1; }
+  .pr-stat-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text3); }
+  .pr-stat-value { font-size: 15px; font-weight: 800; color: var(--accent); line-height: 1.1; }
+  .pr-stat-sub { font-size: 10px; color: var(--text2); }
   .trends-type-tabs { display: flex; gap: 6px; padding: 12px 16px; border-bottom: 0.5px solid var(--sep); flex-shrink: 0; }
   .trend-tab {
     background: var(--surface2); border: none; color: var(--text2);
@@ -557,6 +579,7 @@
     #history-panel { width: 100%; }
     /* Trends panel — full width on mobile */
     #trends-panel { width: 100%; border-left: none; border-top: 0.5px solid var(--sep); }
+    #pr-panel { width: 100%; border-left: none; border-top: 0.5px solid var(--sep); }
     /* Timer — wrap preset buttons onto second line */
     .timer-bar { flex-wrap: wrap; gap: 10px; }
     .timer-actions { flex-wrap: wrap; gap: 4px; }
@@ -608,6 +631,7 @@
     </div>
   </div>
   <div class="header-actions">
+    <button class="btn-ghost" onclick="openPRs()">🏆 PRs</button>
     <button class="btn-ghost" onclick="openTrends()">📈 Trends</button>
     <button class="btn-ghost" onclick="openHistory()">📋 History</button>
     <button class="btn-ghost" onclick="clearAll()">🗑 Clear</button>
@@ -777,6 +801,15 @@
     <button class="trend-tab" data-type="group_a" onclick="selectTrendType('group_a')">🅰️ Group A</button>
   </div>
   <div id="trends-body"></div>
+</div>
+
+<!-- PR Records Panel -->
+<div id="pr-panel">
+  <div class="panel-header">
+    <h2>🏆 Personal Records</h2>
+    <button class="close-btn" onclick="closePRs()">×</button>
+  </div>
+  <div class="pr-panel-body" id="pr-body"></div>
 </div>
 
 <!-- Tooltip -->
@@ -1438,6 +1471,84 @@ function getPrevSession(exerciseName) {
 function getPrevSets(exerciseName) {
   const prev = getPrevSession(exerciseName);
   return prev ? prev.sets : [];
+}
+
+// ─── PR Records ──────────────────────────────────────────────────────────────
+
+function getAllPRs(unit) {
+  const map = {};
+  getHistory().forEach(sess => {
+    const su = sess.unit || 'lb';
+    sess.exercises.forEach(ex => {
+      if (!map[ex.name]) map[ex.name] = { maxVol: 0, maxVolW: 0, maxVolR: 0, maxW: 0, maxWR: 0, maxR: 0, maxRW: 0 };
+      const rec = map[ex.name];
+      ex.sets.forEach(s => {
+        const w = parseFloat(s.weight) || 0;
+        const r = parseInt(s.reps) || 0;
+        if (!w && !r) return;
+        const normW = Math.round(convertWeight(w, su, unit) * 10) / 10;
+        const vol   = normW * r;
+        if (vol > rec.maxVol) { rec.maxVol = vol; rec.maxVolW = normW; rec.maxVolR = r; }
+        if (normW > rec.maxW)  { rec.maxW = normW; rec.maxWR = r; }
+        if (r > rec.maxR)      { rec.maxR = r; rec.maxRW = normW; }
+      });
+    });
+  });
+  return map;
+}
+
+function openPRs() {
+  renderPRs();
+  document.getElementById('pr-panel').classList.add('open');
+}
+
+function closePRs() {
+  document.getElementById('pr-panel').classList.remove('open');
+}
+
+function renderPRs() {
+  const body = document.getElementById('pr-body');
+  const prs  = getAllPRs(selectedUnit);
+  const names = Object.keys(prs).sort();
+
+  if (!names.length) {
+    body.innerHTML = `<div class="pr-empty">No workouts saved yet.<br>Complete a session to see your PRs.</div>`;
+    return;
+  }
+
+  body.innerHTML = names.map(name => {
+    const r = prs[name];
+    const volStr  = r.maxVol  > 0 ? `${r.maxVolW}${selectedUnit} × ${r.maxVolR}` : '—';
+    const volSub  = r.maxVol  > 0 ? `${Math.round(r.maxVol).toLocaleString()} ${selectedUnit} total` : '';
+    const wStr    = r.maxW    > 0 ? `${r.maxW} ${selectedUnit}` : '—';
+    const wSub    = r.maxW    > 0 ? `× ${r.maxWR} rep${r.maxWR !== 1 ? 's' : ''}` : '';
+    const rStr    = r.maxR    > 0 ? `${r.maxR} reps` : '—';
+    const rSub    = r.maxR    > 0 ? `@ ${r.maxRW} ${selectedUnit}` : '';
+    return `
+      <div class="pr-card">
+        <div class="pr-card-name">${name}</div>
+        <div class="pr-stats">
+          <div class="pr-stat">
+            <span class="pr-stat-icon">📊</span>
+            <span class="pr-stat-label">Volume</span>
+            <span class="pr-stat-value">${volStr}</span>
+            <span class="pr-stat-sub">${volSub}</span>
+          </div>
+          <div class="pr-stat">
+            <span class="pr-stat-icon">⬆️</span>
+            <span class="pr-stat-label">Max Weight</span>
+            <span class="pr-stat-value">${wStr}</span>
+            <span class="pr-stat-sub">${wSub}</span>
+          </div>
+          <div class="pr-stat">
+            <span class="pr-stat-icon">🔢</span>
+            <span class="pr-stat-label">Most Reps</span>
+            <span class="pr-stat-value">${rStr}</span>
+            <span class="pr-stat-sub">${rSub}</span>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 function getAllTimeBest(exerciseName, unit) {
