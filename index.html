@@ -263,7 +263,8 @@
   .set-input:focus { outline: none; background: var(--surface3); }
   .set-input::-webkit-inner-spin-button { opacity: 0.3; }
 
-  .prev-hint { font-size: 11px; color: var(--text3); text-align: center; padding-top: 3px; }
+  .prev-hint { font-size: 11px; color: var(--text2); text-align: center; padding-top: 3px; }
+  .pr-badge  { font-size: 10px; font-weight: 800; color: var(--accent); text-align: center; padding-top: 2px; letter-spacing: 0.2px; }
 
   .set-done-btn {
     background: var(--surface2); border: none; color: var(--text3);
@@ -1219,11 +1220,17 @@ function renderSets(idx) {
   const tbody = document.getElementById(`sets-${idx}`);
   tbody.innerHTML = '';
 
-  const history = getPrevSets(ex.name);
+  const prevSession = getPrevSession(ex.name);
+  const history  = prevSession ? prevSession.sets : [];
+  const prevUnit = prevSession ? (prevSession.unit || 'lb') : selectedUnit;
+  const best     = getAllTimeBest(ex.name, selectedUnit);
 
   sets.forEach((s, si) => {
-    const prev   = history[si];
-    const prevTip = prev ? `${prev.weight}${selectedUnit} × ${prev.reps}` : '—';
+    const prev  = history[si];
+    const prevW = prev ? Math.round(convertWeight(parseFloat(prev.weight) || 0, prevUnit, selectedUnit) * 10) / 10 : null;
+    const prevTip = prevW !== null ? `last: ${prevW}${selectedUnit} × ${prev.reps}` : '—';
+    const currentVol = (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
+    const isPR = s.done && currentVol > 0 && (!best || currentVol > best.volume);
     const row = document.createElement('tr');
     row.className = `set-row${s.done ? ' done-row' : ''}`;
     row.id = `set-row-${idx}-${si}`;
@@ -1234,6 +1241,7 @@ function renderSets(idx) {
           placeholder="${selectedUnit}" value="${s.weight}"
           onchange="updateSet(${idx},${si},'weight',this.value)">
         <div class="prev-hint">${prevTip}</div>
+        ${isPR ? '<div class="pr-badge">🏆 New PR!</div>' : ''}
       </td>
       <td>
         <input type="number" min="0" class="set-input"
@@ -1291,6 +1299,26 @@ function toggleSetDone(idx, si) {
 
   updateCardProgress(idx);
   updateProgress();
+
+  // PR badge
+  const prRow = document.getElementById(`set-row-${idx}-${si}`);
+  if (prRow) {
+    const existingBadge = prRow.querySelector('.pr-badge');
+    if (s.done) {
+      const w = parseFloat(s.weight) || 0;
+      const r = parseInt(s.reps) || 0;
+      const vol = w * r;
+      const best = getAllTimeBest(currentPlan[idx].exercise.name, selectedUnit);
+      if (vol > 0 && (!best || vol > best.volume) && !existingBadge) {
+        const badge = document.createElement('div');
+        badge.className = 'pr-badge';
+        badge.textContent = '🏆 New PR!';
+        prRow.querySelector('.prev-hint').after(badge);
+      }
+    } else if (existingBadge) {
+      existingBadge.remove();
+    }
+  }
 
   // Auto-start rest timer when set done
   if (s.done) startTimer();
@@ -1410,6 +1438,23 @@ function getPrevSession(exerciseName) {
 function getPrevSets(exerciseName) {
   const prev = getPrevSession(exerciseName);
   return prev ? prev.sets : [];
+}
+
+function getAllTimeBest(exerciseName, unit) {
+  let bestVol = 0, bestW = 0, bestR = 0;
+  getHistory().forEach(sess => {
+    const ex = sess.exercises.find(e => e.name === exerciseName);
+    if (!ex) return;
+    const su = sess.unit || 'lb';
+    ex.sets.forEach(s => {
+      const w = parseFloat(s.weight) || 0;
+      const r = parseInt(s.reps) || 0;
+      const normW = convertWeight(w, su, unit);
+      const vol = normW * r;
+      if (vol > bestVol) { bestVol = vol; bestW = normW; bestR = r; }
+    });
+  });
+  return bestVol > 0 ? { weight: bestW, reps: bestR, volume: bestVol } : null;
 }
 
 function convertWeight(value, fromUnit, toUnit) {
