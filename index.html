@@ -402,6 +402,27 @@
   .add-ex-row .ex-name { font-size: 15px; font-weight: 600; color: #fff; }
   .add-ex-row .ex-muscles { font-size: 12px; color: var(--text2); margin-top: 1px; }
   .add-ex-row .ex-add-btn { font-size: 22px; color: var(--accent); flex-shrink: 0; line-height: 1; }
+  .custom-ex-section {
+    margin-top: 24px; border-top: 1px solid var(--sep); padding-top: 18px;
+  }
+  .custom-ex-section h4 {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
+    color: var(--text2); margin-bottom: 12px;
+  }
+  .custom-ex-fields { display: flex; flex-direction: column; gap: 10px; }
+  .custom-ex-input, .custom-ex-select {
+    width: 100%; box-sizing: border-box;
+    background: var(--surface2); border: none; border-radius: 10px;
+    padding: 10px 14px; color: #fff; font-size: 15px; outline: none;
+    appearance: none; -webkit-appearance: none;
+  }
+  .custom-ex-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+  .custom-ex-select option { background: #2c2c2e; }
+  .btn-add-custom {
+    width: 100%; background: var(--accent); border: none; border-radius: 10px;
+    padding: 12px; color: #000; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 2px;
+  }
+  .btn-add-custom:active { opacity: 0.8; }
   .btn-add-exercise {
     display: block; width: 100%; margin-top: 16px;
     background: var(--surface); border: 1.5px dashed var(--sep);
@@ -779,6 +800,27 @@
     <input type="text" id="add-ex-search" class="add-ex-search" placeholder="Search by name or muscle…"
            oninput="filterAddExercise(this.value)" autocomplete="off" autocorrect="off" />
     <div id="add-ex-list"></div>
+    <div class="custom-ex-section">
+      <h4>✏️ Add Custom Exercise</h4>
+      <div class="custom-ex-fields">
+        <input type="text" id="custom-ex-name" class="custom-ex-input" placeholder="Exercise name…" autocorrect="off" />
+        <select id="custom-ex-group" class="custom-ex-select">
+          <option value="" disabled selected>Body part…</option>
+          <option value="💪 Chest">💪 Chest</option>
+          <option value="🏋️ Back">🏋️ Back</option>
+          <option value="🔝 Shoulders">🔝 Shoulders</option>
+          <option value="💪 Arms">💪 Arms</option>
+          <option value="🦵 Legs">🦵 Legs</option>
+          <option value="🧘 Core & Calves">🧘 Core & Calves</option>
+          <option value="🔥 Full Body">🔥 Full Body</option>
+        </select>
+        <select id="custom-ex-type" class="custom-ex-select">
+          <option value="compound">Compound (multi-joint)</option>
+          <option value="isolation">Isolation (single-joint)</option>
+        </select>
+        <button class="btn-add-custom" onclick="addCustomExercise()">Add to Workout</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1531,8 +1573,9 @@ function renderAddExList(filter) {
       const dimStyle = alreadyIn.has(ex.name) ? ' style="opacity:0.38"' : '';
       const supersetLine = ex.superset
         ? `<div class="superset-moves" style="margin-top:2px">${ex.superset.join('<span class="ss-sep"> + </span>')}</div>` : '';
+      const safeName = ex.name.replace(/'/g, "\\'");
       html += `
-        <div class="add-ex-row"${dimStyle} onclick="addExerciseToPlan(${JSON.stringify(ex.name)})">
+        <div class="add-ex-row"${dimStyle} onclick="addExerciseToPlan('${safeName}')">
           <div class="ex-info">
             <div class="ex-name">${ex.name}</div>
             ${supersetLine}
@@ -1545,6 +1588,48 @@ function renderAddExList(filter) {
 
   container.innerHTML = html ||
     `<div style="color:var(--text3);padding:24px 0;text-align:center">No exercises found</div>`;
+}
+
+function addCustomExercise() {
+  const name  = document.getElementById('custom-ex-name').value.trim();
+  const group = document.getElementById('custom-ex-group').value;
+  const type  = document.getElementById('custom-ex-type').value;
+
+  if (!name) { toast('Enter an exercise name first'); return; }
+  if (!group) { toast('Pick a body part'); return; }
+
+  const isCompound = type === 'compound';
+  const ex = {
+    name,
+    muscles: group.replace(/^.+?\s/, ''), // strip emoji, use group label as muscle hint
+    type,
+    sets: isCompound
+      ? { beginner: 3, intermediate: 4, advanced: 4 }
+      : { beginner: 3, intermediate: 3, advanced: 3 },
+    reps: isCompound
+      ? { strength: '4-6', hypertrophy: '8-12', endurance: '12-15' }
+      : { strength: '8-10', hypertrophy: '10-15', endurance: '15-20' },
+  };
+
+  const numSets = Math.round(ex.sets[selectedDiff] * GOAL_PARAMS[selectedGoal].setsMulti);
+  const prev = getPrevSession(name);
+  currentPlan.push({
+    exercise: ex,
+    sets: Array.from({ length: numSets }, (_, si) => ({
+      weight: prev && prev.sets[si] ? convertWeight(prev.sets[si].weight, prev.unit, selectedUnit) : '',
+      reps: '',
+      done: false,
+    })),
+  });
+
+  // clear form
+  document.getElementById('custom-ex-name').value = '';
+  document.getElementById('custom-ex-group').selectedIndex = 0;
+  document.getElementById('custom-ex-type').selectedIndex = 0;
+
+  closeAddExercise();
+  renderPlan();
+  toast(`${name} added 💪`);
 }
 
 function addExerciseToPlan(name) {
