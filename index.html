@@ -504,9 +504,11 @@
   }
   .cal-day.is-future { opacity: 0.25; }
   .cal-day.is-today { color: var(--accent); font-weight: 700; box-shadow: 0 0 0 1.5px var(--accent); }
-  .cal-day.has-workout { background: rgba(50,215,75,0.18); color: var(--green); font-weight: 700; cursor: pointer; }
+  .cal-day.has-workout { background: rgba(50,215,75,0.18); color: var(--green); font-weight: 700; cursor: pointer; flex-direction: column; gap: 1px; }
   .cal-day.has-workout:hover { transform: scale(1.18); background: rgba(50,215,75,0.3); }
   .cal-day.is-today.has-workout { box-shadow: 0 0 0 1.5px var(--green); }
+  .cal-workout-emoji { font-size: 13px; line-height: 1; }
+  .cal-day-num { font-size: 9px; line-height: 1; color: var(--green); font-weight: 700; }
 
   /* Day detail modal */
   .day-set-chip { background: var(--surface3); border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 600; }
@@ -2113,7 +2115,12 @@ function renderCalendar() {
     if (hasWorkout) cell.classList.add('has-workout');
     if (isToday)   cell.classList.add('is-today');
     if (isFuture)  cell.classList.add('is-future');
-    cell.textContent = d.getDate();
+    if (hasWorkout) {
+      const emojis = [...new Set(sessions.map(s => (TYPE_NAMES[s.type] || { emoji: '🏋️' }).emoji))].join('');
+      cell.innerHTML = `<span class="cal-workout-emoji">${emojis}</span><span class="cal-day-num">${d.getDate()}</span>`;
+    } else {
+      cell.textContent = d.getDate();
+    }
 
     if (hasWorkout) {
       cell.title = `${sessions.length} session${sessions.length > 1 ? 's' : ''}`;
