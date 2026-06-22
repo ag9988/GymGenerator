@@ -728,6 +728,12 @@
       <div class="card-title">Group B</div>
       <div class="card-desc">Fixed Program · Chest/Legs/Arms</div>
     </div>
+    <div class="workout-card" data-type="group_c" onclick="selectType('group_c')">
+      <div class="card-badge">✓ Selected</div>
+      <span class="card-emoji">⚡</span>
+      <div class="card-title">Group C</div>
+      <div class="card-desc">HIIT · Calisthenics · Cardio</div>
+    </div>
   </div>
 
   <!-- Mesocycle status -->
@@ -864,6 +870,7 @@
     <button class="trend-tab" data-type="full" onclick="selectTrendType('full')">🔥 Full</button>
     <button class="trend-tab" data-type="group_a" onclick="selectTrendType('group_a')">🅰️ Group A</button>
     <button class="trend-tab" data-type="group_b" onclick="selectTrendType('group_b')">🅱️ Group B</button>
+    <button class="trend-tab" data-type="group_c" onclick="selectTrendType('group_c')">⚡ Group C</button>
   </div>
   <div id="trends-body"></div>
 </div>
@@ -1004,6 +1011,15 @@ const EXERCISES = {
     { name: 'Arm Superset',         muscles: 'Biceps, Triceps',                    type: 'isolation', superset: ['Bicep Curls', 'Tricep Pushdowns'], sets: { beginner: 2, intermediate: 3, advanced: 3 }, reps: { strength: '8-10', hypertrophy: '10-12', endurance: '12-15' } },
     { name: 'Overhead Press',       muscles: 'Shoulders, Triceps, Traps',          type: 'compound',  sets: { beginner: 3, intermediate: 4, advanced: 4 }, reps: { strength: '3-5',   hypertrophy: '8-10',  endurance: '12-15' } },
   ],
+  group_c: [
+    { name: 'Burpees',                    muscles: 'Full Body, Cardio',                    type: 'compound',  sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '8-10',  hypertrophy: '12-15', endurance: '18-20' } },
+    { name: 'Push-Up to Shoulder Tap',    muscles: 'Chest, Shoulders, Triceps, Core',      type: 'compound',  sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '8-10',  hypertrophy: '12-16', endurance: '20-24' } },
+    { name: 'Jump Squats',                muscles: 'Quads, Glutes, Calves, Cardio',        type: 'compound',  sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '10-12', hypertrophy: '15-20', endurance: '25-30' } },
+    { name: 'Pull-Ups / Australian Rows', muscles: 'Lats, Biceps, Rhomboids',              type: 'compound',  sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '4-6',   hypertrophy: '8-10',  endurance: '12-15' } },
+    { name: 'Mountain Climbers',          muscles: 'Core, Hip Flexors, Shoulders, Cardio', type: 'compound',  sets: { beginner: 3, intermediate: 3, advanced: 3 }, reps: { strength: '30 sec', hypertrophy: '40 sec', endurance: '45 sec' } },
+    { name: 'Dips',                       muscles: 'Triceps, Chest, Shoulders',            type: 'compound',  sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '6-8',   hypertrophy: '10-15', endurance: '18-20' } },
+    { name: 'High Knees',                 muscles: 'Hip Flexors, Quads, Core, Cardio',     type: 'isolation', sets: { beginner: 3, intermediate: 3, advanced: 3 }, reps: { strength: '30 sec', hypertrophy: '40 sec', endurance: '45 sec' } },
+  ],
   full: [
     { name: 'Deadlift', muscles: 'Full Posterior Chain', type: 'compound', sets: { beginner: 3, intermediate: 4, advanced: 5 }, reps: { strength: '3-5', hypertrophy: '6-8', endurance: '10-12' } },
     { name: 'Barbell Squat', muscles: 'Quads, Glutes, Core', type: 'compound', sets: { beginner: 3, intermediate: 4, advanced: 4 }, reps: { strength: '4-6', hypertrophy: '8-10', endurance: '12-15' } },
@@ -1082,9 +1098,9 @@ const GOAL_PARAMS = {
 };
 
 const TYPE_COUNTS = {
-  beginner:     { upper: 5, lower: 5, full: 6,  group_a: 7, group_b: 7 },
-  intermediate: { upper: 7, lower: 7, full: 8,  group_a: 7, group_b: 7 },
-  advanced:     { upper: 9, lower: 9, full: 10, group_a: 7, group_b: 7 },
+  beginner:     { upper: 5, lower: 5, full: 6,  group_a: 7, group_b: 7, group_c: 7 },
+  intermediate: { upper: 7, lower: 7, full: 8,  group_a: 7, group_b: 7, group_c: 7 },
+  advanced:     { upper: 9, lower: 9, full: 10, group_a: 7, group_b: 7, group_c: 7 },
 };
 
 const TYPE_NAMES = {
@@ -1093,6 +1109,7 @@ const TYPE_NAMES = {
   full:    { title: 'Full Body Workout',  emoji: '🔥' },
   group_a: { title: 'Group A Workout',    emoji: '🅰️' },
   group_b: { title: 'Group B Workout',    emoji: '🅱️' },
+  group_c: { title: 'Group C Workout',    emoji: '⚡' },
 };
 
 // ─── Swap Recommendations ────────────────────────────────────────────────────
@@ -1130,7 +1147,13 @@ const SWAPS = {
   'Lateral Raise Superset': { similar: [{ name: 'Cable Lateral Raise', muscles: 'Side Delts', type: 'isolation' }, { name: 'Dumbbell Lateral Raise', muscles: 'Side Delts', type: 'isolation' }], easier: { name: 'Band Lateral Raise', muscles: 'Side Delts', type: 'isolation' } },
   'Dead Bug':               { similar: [{ name: 'Plank', muscles: 'Core, Shoulders', type: 'isolation' }, { name: 'Hollow Hold', muscles: 'Core, Hip Flexors', type: 'isolation' }], easier: { name: 'Knee Plank', muscles: 'Core', type: 'isolation' } },
   'Calf Raises':            { similar: [{ name: 'Standing Calf Raises', muscles: 'Gastrocnemius, Soleus', type: 'isolation' }, { name: 'Seated Calf Raises', muscles: 'Soleus', type: 'isolation' }], easier: { name: 'Band Calf Raises', muscles: 'Calves', type: 'isolation' } },
-  'Arm Superset':           { similar: [{ name: 'Bicep Curls', muscles: 'Biceps, Brachialis', type: 'isolation' }, { name: 'Tricep Pushdowns', muscles: 'Triceps', type: 'isolation' }], easier: { name: 'Cable Curls', muscles: 'Biceps', type: 'isolation' } },
+  'Arm Superset':               { similar: [{ name: 'Bicep Curls', muscles: 'Biceps, Brachialis', type: 'isolation' }, { name: 'Tricep Pushdowns', muscles: 'Triceps', type: 'isolation' }], easier: { name: 'Cable Curls', muscles: 'Biceps', type: 'isolation' } },
+  'Burpees':                    { similar: [{ name: 'Squat Thrusts',      muscles: 'Full Body',               type: 'compound'  }, { name: 'Jump Lunges',       muscles: 'Legs, Cardio',             type: 'compound'  }], easier: { name: 'Step-Back Burpees',  muscles: 'Full Body',                 type: 'compound'  } },
+  'Push-Up to Shoulder Tap':    { similar: [{ name: 'Diamond Push-Ups',   muscles: 'Triceps, Chest',          type: 'compound'  }, { name: 'Archer Push-Ups',   muscles: 'Chest, Shoulders',         type: 'compound'  }], easier: { name: 'Standard Push-Ups', muscles: 'Chest, Triceps, Shoulders', type: 'compound'  } },
+  'Jump Squats':                { similar: [{ name: 'Box Jumps',           muscles: 'Quads, Glutes',           type: 'compound'  }, { name: 'Broad Jumps',       muscles: 'Quads, Glutes, Calves',    type: 'compound'  }], easier: { name: 'Bodyweight Squats', muscles: 'Quads, Glutes',             type: 'compound'  } },
+  'Pull-Ups / Australian Rows': { similar: [{ name: 'Chin-Ups',           muscles: 'Biceps, Lats',            type: 'compound'  }, { name: 'Commando Pull-Ups', muscles: 'Lats, Biceps',             type: 'compound'  }], easier: { name: 'Australian Rows',   muscles: 'Back, Biceps',              type: 'compound'  } },
+  'Mountain Climbers':          { similar: [{ name: 'Plank Jacks',         muscles: 'Core, Shoulders',         type: 'compound'  }, { name: 'Bear Crawls',       muscles: 'Core, Shoulders, Legs',    type: 'compound'  }], easier: { name: 'Plank Hold',        muscles: 'Core, Shoulders',           type: 'isolation' } },
+  'High Knees':                 { similar: [{ name: 'Jumping Jacks',       muscles: 'Full Body, Cardio',       type: 'isolation' }, { name: 'Jump Rope',         muscles: 'Calves, Cardio',           type: 'isolation' }], easier: { name: 'Marching in Place', muscles: 'Hip Flexors, Quads',        type: 'isolation' } },
   'Incline Chest Press':    { similar: [{ name: 'Incline Dumbbell Press', muscles: 'Upper Chest, Triceps', type: 'compound' }, { name: 'Low Incline Chest Press', muscles: 'Upper Chest, Triceps, Front Delt', type: 'compound' }], easier: { name: 'Incline Push-Ups', muscles: 'Upper Chest, Triceps', type: 'compound' } },
   'Squat':                  { similar: [{ name: 'Goblet Squat', muscles: 'Quads, Glutes, Core', type: 'compound' }, { name: 'Hack Squat', muscles: 'Quads, Glutes', type: 'compound' }], easier: { name: 'Leg Press', muscles: 'Quads, Glutes', type: 'compound' } },
   'Single Leg RDL':         { similar: [{ name: 'Romanian Deadlift', muscles: 'Hamstrings, Glutes, Lower Back', type: 'compound' }, { name: 'RDL', muscles: 'Hamstrings, Glutes, Lower Back', type: 'compound' }], easier: { name: 'Dumbbell RDL', muscles: 'Hamstrings, Glutes', type: 'compound' } },
@@ -1194,6 +1217,24 @@ function selectUnit(unit) {
 
 function generateWorkout(shuffled = false) {
   if (!selectedType) { toast('Pick a workout type first!'); return; }
+
+  if (selectedType === 'group_c') {
+    const chosen = [...EXERCISES.group_c];
+    currentPlan = chosen.map(ex => {
+      const numSets = Math.round(ex.sets[selectedDiff] * GOAL_PARAMS[selectedGoal].setsMulti);
+      const prev = getPrevSession(ex.name);
+      return {
+        exercise: ex,
+        sets: Array.from({ length: numSets }, (_, si) => ({
+          weight: prev && prev.sets[si] ? convertWeight(prev.sets[si].weight, prev.unit, selectedUnit) : '',
+          reps: '',
+          done: false,
+        })),
+      };
+    });
+    renderPlan();
+    return;
+  }
 
   if (selectedType === 'group_b') {
     const chosen = [...EXERCISES.group_b];
