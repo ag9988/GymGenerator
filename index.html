@@ -89,7 +89,7 @@
   /* Workout type cards */
   .workout-picker {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
     margin-bottom: 28px;
   }
@@ -667,6 +667,12 @@
       <div class="card-title">Group A</div>
       <div class="card-desc">Fixed Program · Push/Pull/Legs</div>
     </div>
+    <div class="workout-card" data-type="group_b" onclick="selectType('group_b')">
+      <div class="card-badge">✓ Selected</div>
+      <span class="card-emoji">🅱️</span>
+      <div class="card-title">Group B</div>
+      <div class="card-desc">Fixed Program · Chest/Legs/Arms</div>
+    </div>
   </div>
 
   <!-- Options -->
@@ -799,6 +805,7 @@
     <button class="trend-tab" data-type="lower" onclick="selectTrendType('lower')">🦵 Lower</button>
     <button class="trend-tab" data-type="full" onclick="selectTrendType('full')">🔥 Full</button>
     <button class="trend-tab" data-type="group_a" onclick="selectTrendType('group_a')">🅰️ Group A</button>
+    <button class="trend-tab" data-type="group_b" onclick="selectTrendType('group_b')">🅱️ Group B</button>
   </div>
   <div id="trends-body"></div>
 </div>
@@ -910,6 +917,15 @@ const EXERCISES = {
     { name: 'Cable Row',               muscles: 'Back, Biceps, Rear Delt',          type: 'compound', sets: { beginner: 3, intermediate: 4, advanced: 4 }, reps: { strength: '4-6', hypertrophy: '10-12', endurance: '12-15' } },
     { name: 'Lateral Raise Superset',  muscles: 'Side Delts, Rear Delts, Upper Back', type: 'isolation', superset: ['Y-Shape Raise', 'Rear Delt Fly'], sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '10-12', hypertrophy: '12-15', endurance: '15-20' } },
   ],
+  group_b: [
+    { name: 'Incline Chest Press',  muscles: 'Upper Chest, Triceps, Front Delt',   type: 'compound',  sets: { beginner: 3, intermediate: 4, advanced: 5 }, reps: { strength: '4-6',   hypertrophy: '8-12',  endurance: '12-15' } },
+    { name: 'Squat',                muscles: 'Quads, Glutes, Core',                type: 'compound',  sets: { beginner: 3, intermediate: 4, advanced: 5 }, reps: { strength: '4-6',   hypertrophy: '8-12',  endurance: '12-15' } },
+    { name: 'Single Leg RDL',       muscles: 'Hamstrings, Glutes, Core',           type: 'compound',  sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '5-6',   hypertrophy: '8-10',  endurance: '10-12' } },
+    { name: "Farmer's Carry",       muscles: 'Traps, Core, Grip, Forearms',        type: 'compound',  sets: { beginner: 3, intermediate: 3, advanced: 4 }, reps: { strength: '20m',   hypertrophy: '30m',   endurance: '40m'   } },
+    { name: 'Cable Row',            muscles: 'Back, Biceps, Rear Delt',            type: 'compound',  sets: { beginner: 3, intermediate: 4, advanced: 4 }, reps: { strength: '4-6',   hypertrophy: '10-12', endurance: '12-15' } },
+    { name: 'Arm Superset',         muscles: 'Biceps, Triceps',                    type: 'isolation', superset: ['Bicep Curls', 'Tricep Pushdowns'], sets: { beginner: 2, intermediate: 3, advanced: 3 }, reps: { strength: '8-10', hypertrophy: '10-12', endurance: '12-15' } },
+    { name: 'Overhead Press',       muscles: 'Shoulders, Triceps, Traps',          type: 'compound',  sets: { beginner: 3, intermediate: 4, advanced: 4 }, reps: { strength: '3-5',   hypertrophy: '8-10',  endurance: '12-15' } },
+  ],
   full: [
     { name: 'Deadlift', muscles: 'Full Posterior Chain', type: 'compound', sets: { beginner: 3, intermediate: 4, advanced: 5 }, reps: { strength: '3-5', hypertrophy: '6-8', endurance: '10-12' } },
     { name: 'Barbell Squat', muscles: 'Quads, Glutes, Core', type: 'compound', sets: { beginner: 3, intermediate: 4, advanced: 4 }, reps: { strength: '4-6', hypertrophy: '8-10', endurance: '12-15' } },
@@ -988,9 +1004,9 @@ const GOAL_PARAMS = {
 };
 
 const TYPE_COUNTS = {
-  beginner:     { upper: 5, lower: 5, full: 6,  group_a: 7 },
-  intermediate: { upper: 7, lower: 7, full: 8,  group_a: 7 },
-  advanced:     { upper: 9, lower: 9, full: 10, group_a: 7 },
+  beginner:     { upper: 5, lower: 5, full: 6,  group_a: 7, group_b: 7 },
+  intermediate: { upper: 7, lower: 7, full: 8,  group_a: 7, group_b: 7 },
+  advanced:     { upper: 9, lower: 9, full: 10, group_a: 7, group_b: 7 },
 };
 
 const TYPE_NAMES = {
@@ -998,6 +1014,7 @@ const TYPE_NAMES = {
   lower:   { title: 'Lower Body Workout', emoji: '🦵' },
   full:    { title: 'Full Body Workout',  emoji: '🔥' },
   group_a: { title: 'Group A Workout',    emoji: '🅰️' },
+  group_b: { title: 'Group B Workout',    emoji: '🅱️' },
 };
 
 // ─── Swap Recommendations ────────────────────────────────────────────────────
@@ -1036,6 +1053,10 @@ const SWAPS = {
   'Dead Bug':               { similar: [{ name: 'Plank', muscles: 'Core, Shoulders', type: 'isolation' }, { name: 'Hollow Hold', muscles: 'Core, Hip Flexors', type: 'isolation' }], easier: { name: 'Knee Plank', muscles: 'Core', type: 'isolation' } },
   'Calf Raises':            { similar: [{ name: 'Standing Calf Raises', muscles: 'Gastrocnemius, Soleus', type: 'isolation' }, { name: 'Seated Calf Raises', muscles: 'Soleus', type: 'isolation' }], easier: { name: 'Band Calf Raises', muscles: 'Calves', type: 'isolation' } },
   'Arm Superset':           { similar: [{ name: 'Bicep Curls', muscles: 'Biceps, Brachialis', type: 'isolation' }, { name: 'Tricep Pushdowns', muscles: 'Triceps', type: 'isolation' }], easier: { name: 'Cable Curls', muscles: 'Biceps', type: 'isolation' } },
+  'Incline Chest Press':    { similar: [{ name: 'Incline Dumbbell Press', muscles: 'Upper Chest, Triceps', type: 'compound' }, { name: 'Low Incline Chest Press', muscles: 'Upper Chest, Triceps, Front Delt', type: 'compound' }], easier: { name: 'Incline Push-Ups', muscles: 'Upper Chest, Triceps', type: 'compound' } },
+  'Squat':                  { similar: [{ name: 'Goblet Squat', muscles: 'Quads, Glutes, Core', type: 'compound' }, { name: 'Hack Squat', muscles: 'Quads, Glutes', type: 'compound' }], easier: { name: 'Leg Press', muscles: 'Quads, Glutes', type: 'compound' } },
+  'Single Leg RDL':         { similar: [{ name: 'Romanian Deadlift', muscles: 'Hamstrings, Glutes, Lower Back', type: 'compound' }, { name: 'RDL', muscles: 'Hamstrings, Glutes, Lower Back', type: 'compound' }], easier: { name: 'Dumbbell RDL', muscles: 'Hamstrings, Glutes', type: 'compound' } },
+  "Farmer's Carry":         { similar: [{ name: 'Suitcase Carry', muscles: 'Core, Traps, Grip', type: 'compound' }, { name: 'Trap Bar Deadlift', muscles: 'Full Posterior Chain, Quads', type: 'compound' }], easier: { name: 'Dumbbell Walk', muscles: 'Traps, Core, Grip', type: 'compound' } },
 };
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -1095,6 +1116,24 @@ function selectUnit(unit) {
 
 function generateWorkout(shuffled = false) {
   if (!selectedType) { toast('Pick a workout type first!'); return; }
+
+  if (selectedType === 'group_b') {
+    const chosen = [...EXERCISES.group_b];
+    currentPlan = chosen.map(ex => {
+      const numSets = Math.round(ex.sets[selectedDiff] * GOAL_PARAMS[selectedGoal].setsMulti);
+      const prev = getPrevSession(ex.name);
+      return {
+        exercise: ex,
+        sets: Array.from({ length: numSets }, (_, si) => ({
+          weight: prev && prev.sets[si] ? convertWeight(prev.sets[si].weight, prev.unit, selectedUnit) : '',
+          reps: '',
+          done: false,
+        })),
+      };
+    });
+    renderPlan();
+    return;
+  }
 
   if (selectedType === 'group_a') {
     const finisher = FINISHERS_A[Math.floor(Math.random() * FINISHERS_A.length)];
@@ -2087,7 +2126,7 @@ function renderTrends() {
   const body  = document.getElementById('trends-body');
 
   if (allEx.length === 0) {
-    const trendLabel = trendType === 'full' ? 'full body' : trendType === 'group_a' ? 'Group A' : trendType + ' body';
+    const trendLabel = trendType === 'full' ? 'full body' : trendType === 'group_a' ? 'Group A' : trendType === 'group_b' ? 'Group B' : trendType + ' body';
     body.innerHTML = `<div class="trends-empty">No ${trendLabel} sessions saved yet.<br>Complete and save a workout to see trends.</div>`;
     return;
   }
