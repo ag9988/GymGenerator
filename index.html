@@ -266,6 +266,45 @@
   .prev-hint { font-size: 11px; color: var(--text2); text-align: center; padding-top: 3px; }
   .cycle-hint { font-size: 10px; font-weight: 700; color: var(--accent); text-align: center; padding-top: 2px; }
 
+  /* Workout summary modal */
+  .summary-modal .summary-inner { padding: 24px 20px 32px; gap: 0; }
+  .summary-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+  .summary-title  { font-size: 22px; font-weight: 800; color: #fff; }
+  .summary-date   { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .summary-stats  {
+    display: flex; gap: 10px; margin-bottom: 16px;
+  }
+  .summary-stat {
+    flex: 1; background: var(--surface2); border-radius: 12px;
+    padding: 12px 8px; text-align: center;
+  }
+  .summary-stat-value { font-size: 20px; font-weight: 800; color: var(--accent); }
+  .summary-stat-label { font-size: 10px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+  .summary-prs { margin-bottom: 12px; }
+  .summary-pr-item {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,159,10,0.1); border-radius: 10px;
+    padding: 8px 12px; margin-bottom: 6px; font-size: 13px; font-weight: 600;
+  }
+  .summary-pr-item .pr-ex  { flex: 1; color: #fff; }
+  .summary-pr-item .pr-val { color: var(--accent); }
+  .summary-exercises { margin-bottom: 20px; }
+  .summary-ex-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 9px 0; border-bottom: 0.5px solid var(--sep); font-size: 14px;
+  }
+  .summary-ex-name { font-weight: 600; color: #fff; }
+  .summary-ex-sets { font-size: 12px; color: var(--text2); text-align: right; max-width: 55%; }
+  .summary-actions { display: flex; gap: 10px; }
+  .summary-share-btn {
+    flex: 1; background: var(--accent); border: none; border-radius: 14px;
+    padding: 14px; color: #000; font-size: 15px; font-weight: 700; cursor: pointer;
+  }
+  .summary-history-btn {
+    background: var(--surface2); border: none; border-radius: 14px;
+    padding: 14px 18px; color: var(--text2); font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+
   /* Set timer (time-based reps) */
   .set-time-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .set-time-btn {
@@ -949,6 +988,25 @@
         </select>
         <button class="btn-add-custom" onclick="addCustomExercise()">Add to Workout</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div id="summary-modal" class="swap-modal summary-modal" onclick="if(event.target===this)closeSummary()">
+  <div class="swap-modal-inner summary-inner">
+    <div class="summary-header">
+      <div>
+        <div id="summary-title" class="summary-title"></div>
+        <div id="summary-date" class="summary-date"></div>
+      </div>
+      <button class="close-btn" onclick="closeSummary()">×</button>
+    </div>
+    <div id="summary-stats" class="summary-stats"></div>
+    <div id="summary-prs" class="summary-prs"></div>
+    <div id="summary-exercises" class="summary-exercises"></div>
+    <div class="summary-actions">
+      <button class="summary-share-btn" onclick="shareSummary()">📤 Share Workout</button>
+      <button class="summary-history-btn" onclick="closeSummary();openHistory()">View History</button>
     </div>
   </div>
 </div>
@@ -1784,6 +1842,217 @@ function convertWeight(value, fromUnit, toUnit) {
   return isNaN(converted) ? value : String(Math.round(converted * 10) / 10);
 }
 
+// ─── Workout Summary ──────────────────────────────────────────────────────────
+
+let _summarySession = null;
+
+function openSummary(session) {
+  _summarySession = session;
+  const typeInfo = TYPE_NAMES[session.type] || { emoji: '🏋️', title: session.type };
+  document.getElementById('summary-title').textContent = `${typeInfo.emoji} ${typeInfo.title}`;
+  document.getElementById('summary-date').textContent  = session.date;
+
+  // Stats
+  const totalSets = session.exercises.reduce((s, e) => s + e.sets.length, 0);
+  let totalVol = 0;
+  session.exercises.forEach(ex => {
+    ex.sets.forEach(s => {
+      const w = parseFloat(s.weight) || 0;
+      const r = parseInt(s.reps) || 0;
+      totalVol += convertWeight(w, session.unit || 'lb', selectedUnit) * r;
+    });
+  });
+  const volDisplay = totalVol > 0
+    ? (totalVol >= 1000 ? (totalVol / 1000).toFixed(1) + 'k' : Math.round(totalVol)) + ' ' + selectedUnit
+    : '—';
+  document.getElementById('summary-stats').innerHTML = `
+    <div class="summary-stat"><div class="summary-stat-value">${session.exercises.length}</div><div class="summary-stat-label">Exercises</div></div>
+    <div class="summary-stat"><div class="summary-stat-value">${totalSets}</div><div class="summary-stat-label">Sets</div></div>
+    <div class="summary-stat"><div class="summary-stat-value">${volDisplay}</div><div class="summary-stat-label">Volume</div></div>
+  `;
+
+  // PRs — compare each set against all prior history (excluding this session)
+  const priorHistory = getHistory().slice(0, -1);
+  const prs = [];
+  session.exercises.forEach(ex => {
+    let priorBest = 0;
+    priorHistory.forEach(sess => {
+      const e = sess.exercises.find(e => e.name === ex.name);
+      if (!e) return;
+      const su = sess.unit || 'lb';
+      e.sets.forEach(s => {
+        const vol = convertWeight(parseFloat(s.weight)||0, su, selectedUnit) * (parseInt(s.reps)||0);
+        if (vol > priorBest) priorBest = vol;
+      });
+    });
+    ex.sets.forEach(s => {
+      const w = parseFloat(s.weight) || 0;
+      const r = parseInt(s.reps) || 0;
+      const vol = convertWeight(w, session.unit||'lb', selectedUnit) * r;
+      if (vol > 0 && vol > priorBest) {
+        prs.push({ name: ex.name, weight: convertWeight(w, session.unit||'lb', selectedUnit), reps: r });
+        priorBest = vol;
+      }
+    });
+  });
+  document.getElementById('summary-prs').innerHTML = prs.length
+    ? prs.map(p => `<div class="summary-pr-item">🏆 <span class="pr-ex">${p.name}</span><span class="pr-val">${p.weight}${selectedUnit} × ${p.reps}</span></div>`).join('')
+    : '';
+
+  // Exercise breakdown
+  document.getElementById('summary-exercises').innerHTML = session.exercises.map(ex => {
+    const setLines = ex.sets.map(s => {
+      const w = s.weight ? `${convertWeight(parseFloat(s.weight), session.unit||'lb', selectedUnit)}${selectedUnit}` : null;
+      const r = s.reps ? `${s.reps}` : null;
+      return w && r ? `${w} × ${r}` : (r ? `${r} reps` : '—');
+    }).join(' · ');
+    return `<div class="summary-ex-row">
+      <span class="summary-ex-name">${ex.name}</span>
+      <span class="summary-ex-sets">${setLines}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('summary-modal').classList.add('open');
+}
+
+function closeSummary() {
+  document.getElementById('summary-modal').classList.remove('open');
+}
+
+function buildSummaryCanvas(session) {
+  const W = 750, pad = 48;
+  const typeInfo  = TYPE_NAMES[session.type] || { emoji: '🏋️', title: session.type };
+  const exercises = session.exercises;
+
+  // Estimate height
+  const lineH  = 38;
+  const H = 200 + 110 + exercises.length * lineH + 120;
+  const canvas  = document.createElement('canvas');
+  canvas.width  = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  // Orange glow top
+  const grd = ctx.createRadialGradient(W/2, 0, 0, W/2, 0, W * 0.7);
+  grd.addColorStop(0, 'rgba(255,159,10,0.22)');
+  grd.addColorStop(1, 'rgba(255,159,10,0)');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, W, H);
+
+  // Branding
+  ctx.fillStyle = '#ff9f0a';
+  ctx.font = 'bold 28px -apple-system, Helvetica Neue, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('DR.G GYM', pad, 60);
+
+  // Workout title
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 48px -apple-system, Helvetica Neue, sans-serif';
+  ctx.fillText(`${typeInfo.emoji} ${typeInfo.title}`, pad, 120);
+
+  // Date
+  ctx.fillStyle = 'rgba(235,235,245,0.5)';
+  ctx.font = '600 24px -apple-system, Helvetica Neue, sans-serif';
+  ctx.fillText(session.date, pad, 158);
+
+  // Separator
+  ctx.strokeStyle = 'rgba(84,84,88,0.65)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad, 180); ctx.lineTo(W - pad, 180); ctx.stroke();
+
+  // Exercise list
+  let y = 218;
+  exercises.forEach(ex => {
+    ctx.fillStyle = '#fff';
+    ctx.font = '600 26px -apple-system, Helvetica Neue, sans-serif';
+    ctx.textAlign = 'left';
+    // Truncate long names
+    const maxW = W - pad * 2 - 220;
+    let name = ex.name;
+    ctx.font = '600 24px -apple-system, Helvetica Neue, sans-serif';
+    while (ctx.measureText(name).width > maxW && name.length > 6) name = name.slice(0, -1);
+    if (name !== ex.name) name += '…';
+    ctx.fillText(name, pad, y);
+
+    // Set summary on right
+    const summary = ex.sets.slice(0, 3).map(s => {
+      const w = s.weight ? convertWeight(parseFloat(s.weight), session.unit||'lb', selectedUnit) : null;
+      return w ? `${w}×${s.reps||'?'}` : (s.reps ? s.reps : null);
+    }).filter(Boolean).join('  ');
+    ctx.fillStyle = 'rgba(235,235,245,0.5)';
+    ctx.font = '500 22px -apple-system, Helvetica Neue, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(summary, W - pad, y);
+    y += lineH;
+  });
+
+  // Bottom separator
+  ctx.strokeStyle = 'rgba(84,84,88,0.65)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad, y + 10); ctx.lineTo(W - pad, y + 10); ctx.stroke();
+
+  // Stats row
+  const stats = [
+    { label: 'Exercises', value: String(exercises.length) },
+    { label: 'Sets', value: String(exercises.reduce((s, e) => s + e.sets.length, 0)) },
+  ];
+  let totalVol = 0;
+  exercises.forEach(ex => ex.sets.forEach(s => {
+    totalVol += convertWeight(parseFloat(s.weight)||0, session.unit||'lb', selectedUnit) * (parseInt(s.reps)||0);
+  }));
+  if (totalVol > 0) stats.push({ label: 'Volume', value: (totalVol >= 1000 ? (totalVol/1000).toFixed(1)+'k' : Math.round(totalVol)) + ' ' + selectedUnit });
+
+  const slotW = (W - pad * 2) / stats.length;
+  stats.forEach(({ label, value }, i) => {
+    const cx = pad + slotW * i + slotW / 2;
+    ctx.fillStyle = '#ff9f0a';
+    ctx.font = 'bold 34px -apple-system, Helvetica Neue, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(value, cx, y + 54);
+    ctx.fillStyle = 'rgba(235,235,245,0.5)';
+    ctx.font = '500 18px -apple-system, Helvetica Neue, sans-serif';
+    ctx.fillText(label.toUpperCase(), cx, y + 78);
+  });
+
+  return canvas;
+}
+
+async function shareSummary() {
+  if (!_summarySession) return;
+  const canvas = buildSummaryCanvas(_summarySession);
+  const dataUrl = canvas.toDataURL('image/png');
+
+  // Try Web Share API first (iOS/Android), fall back to download
+  if (navigator.share && navigator.canShare) {
+    try {
+      canvas.toBlob(async blob => {
+        const file = new File([blob], 'workout.png', { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'My Workout' });
+        } else {
+          _downloadSummary(dataUrl);
+        }
+      }, 'image/png');
+      return;
+    } catch (e) {
+      if (e.name !== 'AbortError') _downloadSummary(dataUrl);
+    }
+  } else {
+    _downloadSummary(dataUrl);
+  }
+}
+
+function _downloadSummary(dataUrl) {
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = 'workout-summary.png';
+  a.click();
+}
+
 function finishWorkout() {
   const doneSets = currentPlan.reduce((s, e) => s + e.sets.filter(x => x.done).length, 0);
   if (doneSets === 0) { toast('Log at least one set before saving!'); return; }
@@ -1805,8 +2074,7 @@ function finishWorkout() {
   h.push(session);
   saveHistory(h);
   renderCalendar();
-  toast('✅ Workout saved!');
-  openHistory();
+  openSummary(session);
 }
 
 function openHistory() {
