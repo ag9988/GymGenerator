@@ -2334,12 +2334,13 @@ function closeSummary() {
 function buildSummaryCanvas(session) {
   const W = 750, pad = 48;
   const typeInfo  = TYPE_NAMES[session.type] || { emoji: '🏋️', title: session.type };
-  const exercises = session.exercises;
+  const exercises = session.exercises || [];
+  const cardio    = isCardio(session.type) && session.cardio;
 
-  // Estimate height
-  const lineH  = 38;
-  const H = 200 + 110 + exercises.length * lineH + 120;
-  const canvas  = document.createElement('canvas');
+  const lineH     = 38;
+  const chartSectionH = 148; // label + bars + week labels
+  const H = 200 + 110 + (cardio ? 30 : exercises.length * lineH) + chartSectionH;
+  const canvas = document.createElement('canvas');
   canvas.width  = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
@@ -2348,7 +2349,7 @@ function buildSummaryCanvas(session) {
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, W, H);
 
-  // Orange glow top
+  // Orange glow
   const grd = ctx.createRadialGradient(W/2, 0, 0, W/2, 0, W * 0.7);
   grd.addColorStop(0, 'rgba(255,159,10,0.22)');
   grd.addColorStop(1, 'rgba(255,159,10,0)');
@@ -2376,47 +2377,81 @@ function buildSummaryCanvas(session) {
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(pad, 180); ctx.lineTo(W - pad, 180); ctx.stroke();
 
-  // Exercise list
+  // Content rows
   let y = 218;
-  exercises.forEach(ex => {
+  if (cardio) {
+    const c = session.cardio;
+    const h2 = c.durationH||0, m2 = c.durationM||0, s2 = c.durationS||0;
+    const durStr = h2 > 0 ? `${h2}h ${m2}m` : `${m2}:${String(s2).padStart(2,'0')}`;
+    const durMin = h2*60 + m2 + s2/60;
+    const dist = parseFloat(c.distance)||0;
+    let paceStr = '';
+    if (dist && durMin) {
+      if (session.type === 'run' || session.type === 'hike') {
+        const pm = durMin/dist, mm = Math.floor(pm), ss = Math.round((pm-mm)*60);
+        paceStr = `${mm}:${String(ss).padStart(2,'0')}/${c.distUnit}`;
+      } else if (session.type === 'cycle') {
+        paceStr = `${(dist/(durMin/60)).toFixed(1)} ${c.distUnit}/hr`;
+      } else if (session.type === 'swim') {
+        const meters = c.distUnit==='m' ? dist : dist*0.9144;
+        const per100 = durMin/(meters/100);
+        const mm = Math.floor(per100), ss = Math.round((per100-mm)*60);
+        paceStr = `${mm}:${String(ss).padStart(2,'0')}/100m`;
+      }
+    }
     ctx.fillStyle = '#fff';
     ctx.font = '600 26px -apple-system, Helvetica Neue, sans-serif';
     ctx.textAlign = 'left';
-    // Truncate long names
-    const maxW = W - pad * 2 - 220;
-    let name = ex.name;
-    ctx.font = '600 24px -apple-system, Helvetica Neue, sans-serif';
-    while (ctx.measureText(name).width > maxW && name.length > 6) name = name.slice(0, -1);
-    if (name !== ex.name) name += '…';
-    ctx.fillText(name, pad, y);
+    ctx.fillText(`${c.distance} ${c.distUnit}  ·  ${durStr}${paceStr ? '  ·  ' + paceStr : ''}`, pad, y);
+    y += 30;
+  } else {
+    exercises.forEach(ex => {
+      const maxNameW = W - pad * 2 - 240;
+      let name = ex.name;
+      ctx.font = '600 24px -apple-system, Helvetica Neue, sans-serif';
+      while (ctx.measureText(name).width > maxNameW && name.length > 6) name = name.slice(0, -1);
+      if (name !== ex.name) name += '…';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'left';
+      ctx.fillText(name, pad, y);
 
-    // Set summary on right
-    const summary = ex.sets.slice(0, 3).map(s => {
-      const w = s.weight ? convertWeight(parseFloat(s.weight), session.unit||'lb', selectedUnit) : null;
-      return w ? `${w}×${s.reps||'?'}` : (s.reps ? s.reps : null);
-    }).filter(Boolean).join('  ');
-    ctx.fillStyle = 'rgba(235,235,245,0.5)';
-    ctx.font = '500 22px -apple-system, Helvetica Neue, sans-serif';
-    ctx.textAlign = 'right';
-    ctx.fillText(summary, W - pad, y);
-    y += lineH;
-  });
+      const summary = ex.sets.slice(0, 3).map(s => {
+        const w = s.weight ? convertWeight(parseFloat(s.weight), session.unit||'lb', selectedUnit) : null;
+        return w ? `${w}×${s.reps||'?'}` : (s.reps ? s.reps : null);
+      }).filter(Boolean).join('  ');
+      ctx.fillStyle = 'rgba(235,235,245,0.5)';
+      ctx.font = '500 22px -apple-system, Helvetica Neue, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(summary, W - pad, y);
+      y += lineH;
+    });
+  }
 
-  // Bottom separator
+  // Separator
   ctx.strokeStyle = 'rgba(84,84,88,0.65)';
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(pad, y + 10); ctx.lineTo(W - pad, y + 10); ctx.stroke();
 
   // Stats row
-  const stats = [
-    { label: 'Exercises', value: String(exercises.length) },
-    { label: 'Sets', value: String(exercises.reduce((s, e) => s + e.sets.length, 0)) },
-  ];
-  let totalVol = 0;
-  exercises.forEach(ex => ex.sets.forEach(s => {
-    totalVol += convertWeight(parseFloat(s.weight)||0, session.unit||'lb', selectedUnit) * (parseInt(s.reps)||0);
-  }));
-  if (totalVol > 0) stats.push({ label: 'Volume', value: (totalVol >= 1000 ? (totalVol/1000).toFixed(1)+'k' : Math.round(totalVol)) + ' ' + selectedUnit });
+  let stats;
+  if (cardio) {
+    const lp = (session.cardio.loadPoints || calcLoadPoints(session)).toFixed(1);
+    stats = [
+      { label: 'Distance',  value: `${session.cardio.distance} ${session.cardio.distUnit}` },
+      { label: 'Load Pts',  value: lp },
+    ];
+    if (session.cardio.hr) stats.push({ label: 'Avg HR', value: `${session.cardio.hr} bpm` });
+  } else {
+    let totalVol = 0;
+    exercises.forEach(ex => ex.sets.forEach(s => {
+      totalVol += convertWeight(parseFloat(s.weight)||0, session.unit||'lb', selectedUnit) * (parseInt(s.reps)||0);
+    }));
+    stats = [
+      { label: 'Exercises', value: String(exercises.length) },
+      { label: 'Sets',      value: String(exercises.reduce((s, e) => s + e.sets.length, 0)) },
+    ];
+    if (totalVol > 0) stats.push({ label: 'Volume', value: (totalVol >= 1000 ? (totalVol/1000).toFixed(1)+'k' : Math.round(totalVol)) + ' ' + selectedUnit });
+  }
 
   const slotW = (W - pad * 2) / stats.length;
   stats.forEach(({ label, value }, i) => {
@@ -2428,6 +2463,61 @@ function buildSummaryCanvas(session) {
     ctx.fillStyle = 'rgba(235,235,245,0.5)';
     ctx.font = '500 18px -apple-system, Helvetica Neue, sans-serif';
     ctx.fillText(label.toUpperCase(), cx, y + 78);
+  });
+
+  // ── 28-Day Load Chart ──────────────────────────────────────────────────────
+  const chartTop = y + 108;
+  const chartH2  = 68;
+  const chartW   = W - pad * 2;
+  const barGap   = 2;
+  const barW     = (chartW - 27 * barGap) / 28;
+
+  // Section label
+  ctx.fillStyle = 'rgba(235,235,245,0.28)';
+  ctx.font = '700 15px -apple-system, Helvetica Neue, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('28-DAY LOAD', pad, chartTop - 10);
+
+  // Build daily LP map
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const dayLPs = new Array(28).fill(0);
+  getHistory().forEach(sess => {
+    const sd = new Date(sess.date); sd.setHours(0, 0, 0, 0);
+    const ago = Math.floor((today - sd) / 86400000);
+    if (ago >= 0 && ago < 28) {
+      dayLPs[27 - ago] += sess.cardio?.loadPoints ?? calcLoadPoints(sess);
+    }
+  });
+  const maxLP = Math.max(...dayLPs, 1);
+
+  dayLPs.forEach((lp, i) => {
+    const frac = lp > 0 ? Math.max(lp / maxLP, 0.06) : 0;
+    const bh   = frac * chartH2;
+    const bx   = pad + i * (barW + barGap);
+    const by   = chartTop + chartH2 - bh;
+
+    let color = 'rgba(84,84,88,0.22)';
+    if (lp >  0) color = '#32d74b';
+    if (lp > 30) color = 'rgba(255,159,10,0.75)';
+    if (lp > 60) color = '#ff9f0a';
+    if (lp > 90) color = '#ff453a';
+
+    // Today's bar gets a glow
+    if (i === 27 && lp > 0) { ctx.shadowColor = color; ctx.shadowBlur = 10; }
+    ctx.fillStyle = color;
+    ctx.fillRect(bx, by, barW, bh);
+    ctx.shadowBlur = 0;
+  });
+
+  // Week-start labels under bars
+  ctx.fillStyle = 'rgba(235,235,245,0.25)';
+  ctx.font = '500 15px -apple-system, Helvetica Neue, sans-serif';
+  [0, 7, 14, 21].forEach(i => {
+    const d = new Date(today); d.setDate(d.getDate() - (27 - i));
+    const label = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const lx = pad + i * (barW + barGap);
+    ctx.textAlign = i === 21 ? 'right' : 'left';
+    ctx.fillText(label, i === 21 ? lx + barW * 7 : lx, chartTop + chartH2 + 22);
   });
 
   return canvas;
