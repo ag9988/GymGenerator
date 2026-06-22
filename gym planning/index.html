@@ -266,6 +266,42 @@
   .prev-hint { font-size: 11px; color: var(--text2); text-align: center; padding-top: 3px; }
   .cycle-hint { font-size: 10px; font-weight: 700; color: var(--accent); text-align: center; padding-top: 2px; }
 
+  /* Cardio log modal */
+  .cardio-field { margin-bottom: 16px; }
+  .cardio-field label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text3); margin-bottom: 6px; }
+  .cardio-field label span { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--text3); }
+  .cardio-input-row { display: flex; gap: 8px; align-items: center; }
+  .cardio-input {
+    flex: 1; background: var(--surface2); border: none; border-radius: 10px;
+    padding: 11px 14px; color: #fff; font-size: 16px; outline: none; min-width: 0;
+  }
+  .cardio-unit-sel { flex: 0 0 68px; cursor: pointer; }
+  .cardio-dur-part { flex: 0 0 60px; }
+  .cardio-unit-label { font-size: 14px; color: var(--text2); font-weight: 600; flex-shrink: 0; }
+  .cardio-pace-preview { text-align: center; color: var(--text2); font-size: 15px; font-weight: 600; margin: -4px 0 16px; min-height: 22px; }
+  .cardio-pace-preview span { color: var(--accent); }
+
+  /* Training Load dashboard */
+  .load-section { margin-bottom: 24px; }
+  .load-totals { display: flex; gap: 10px; margin-bottom: 12px; }
+  .load-total { flex: 1; background: var(--surface); border-radius: 12px; padding: 10px 6px; text-align: center; }
+  .load-total-value { font-size: 17px; font-weight: 800; color: var(--accent); }
+  .load-total-sub   { font-size: 11px; font-weight: 600; color: var(--green); margin-top: 1px; }
+  .load-total-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+  .load-chart { background: var(--surface); border-radius: 14px; padding: 14px 10px 10px; }
+  .load-bars { display: flex; align-items: flex-end; gap: 2px; height: 56px; }
+  .load-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+  .load-bar { width: 100%; border-radius: 3px 3px 0 0; min-height: 2px; }
+  .load-bar.zone-easy { background: var(--green); opacity: 0.85; }
+  .load-bar.zone-mod  { background: #ff9f0a; opacity: 0.8; }
+  .load-bar.zone-hard { background: #ff9f0a; }
+  .load-bar.zone-max  { background: var(--red); }
+  .load-bar.zone-rest { background: var(--surface2); height: 2px !important; opacity: 0.5; }
+  .load-week-label { display: flex; justify-content: space-between; margin-top: 6px; padding: 0 2px; }
+  .load-week-label span { font-size: 10px; color: var(--text3); font-weight: 600; }
+  .load-type-breakdown { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .load-type-chip { background: var(--surface); border-radius: 20px; padding: 5px 11px; font-size: 12px; font-weight: 600; color: var(--text2); }
+
   /* Workout summary modal */
   .summary-modal .summary-inner { padding: 24px 20px 32px; gap: 0; }
   .summary-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
@@ -796,6 +832,34 @@
     </div>
   </div>
 
+  <div class="section-label" style="margin-top:20px">Cardio</div>
+  <div class="workout-picker">
+    <div class="workout-card" data-type="run" onclick="openCardioLog('run')">
+      <div class="card-badge">✓ Selected</div>
+      <span class="card-emoji">🏃</span>
+      <div class="card-title">Run</div>
+      <div class="card-desc">Distance · Pace · HR</div>
+    </div>
+    <div class="workout-card" data-type="cycle" onclick="openCardioLog('cycle')">
+      <div class="card-badge">✓ Selected</div>
+      <span class="card-emoji">🚴</span>
+      <div class="card-title">Cycle</div>
+      <div class="card-desc">Distance · Speed</div>
+    </div>
+    <div class="workout-card" data-type="hike" onclick="openCardioLog('hike')">
+      <div class="card-badge">✓ Selected</div>
+      <span class="card-emoji">🥾</span>
+      <div class="card-title">Hike</div>
+      <div class="card-desc">Distance · Elevation</div>
+    </div>
+    <div class="workout-card" data-type="swim" onclick="openCardioLog('swim')">
+      <div class="card-badge">✓ Selected</div>
+      <span class="card-emoji">🏊</span>
+      <div class="card-title">Swim</div>
+      <div class="card-desc">Distance · Pace</div>
+    </div>
+  </div>
+
   <!-- Mesocycle status -->
   <div id="cycle-status"></div>
 
@@ -874,6 +938,17 @@
     <div class="finish-row">
       <button class="btn-finish" onclick="finishWorkout()">✅ Finish Workout & Save</button>
     </div>
+  </div>
+
+  <!-- Training Load -->
+  <div class="load-section">
+    <div class="section-label">Training Load</div>
+    <div class="load-totals" id="load-totals"></div>
+    <div class="load-chart">
+      <div class="load-bars" id="load-bars"></div>
+      <div class="load-week-label" id="load-week-label"></div>
+    </div>
+    <div class="load-type-breakdown" id="load-type-breakdown"></div>
   </div>
 
   <!-- Calendar -->
@@ -989,6 +1064,60 @@
         <button class="btn-add-custom" onclick="addCustomExercise()">Add to Workout</button>
       </div>
     </div>
+  </div>
+</div>
+
+<div id="cardio-log-modal" class="swap-modal" onclick="if(event.target===this)closeCardioLog()">
+  <div class="swap-modal-inner">
+    <div class="swap-modal-header">
+      <h3 id="cardio-log-title">🏃 Log Run</h3>
+      <button class="close-btn" onclick="closeCardioLog()">×</button>
+    </div>
+    <div class="cardio-field">
+      <label>Distance</label>
+      <div class="cardio-input-row">
+        <input class="cardio-input" id="cardio-dist" type="number" step="0.01" min="0" placeholder="0.0" oninput="updateCardioPace()">
+        <select class="cardio-input cardio-unit-sel" id="cardio-dist-unit" onchange="updateCardioPace()">
+          <option value="mi">mi</option>
+          <option value="km">km</option>
+          <option value="m">m</option>
+        </select>
+      </div>
+    </div>
+    <div class="cardio-field">
+      <label>Duration</label>
+      <div class="cardio-input-row">
+        <input class="cardio-input cardio-dur-part" id="cardio-dur-h" type="number" min="0" placeholder="0" oninput="updateCardioPace()">
+        <span class="cardio-unit-label">h</span>
+        <input class="cardio-input" id="cardio-dur-m" type="number" min="0" max="59" placeholder="28" oninput="updateCardioPace()">
+        <span class="cardio-unit-label">min</span>
+        <input class="cardio-input cardio-dur-part" id="cardio-dur-s" type="number" min="0" max="59" placeholder="30" oninput="updateCardioPace()">
+        <span class="cardio-unit-label">sec</span>
+      </div>
+    </div>
+    <div class="cardio-pace-preview" id="cardio-pace-row">Pace: —</div>
+    <div class="cardio-field" id="cardio-elev-field">
+      <label>Elevation Gain <span>(optional)</span></label>
+      <div class="cardio-input-row">
+        <input class="cardio-input" id="cardio-elev" type="number" min="0" placeholder="0">
+        <select class="cardio-input cardio-unit-sel" id="cardio-elev-unit">
+          <option value="ft">ft</option>
+          <option value="m">m</option>
+        </select>
+      </div>
+    </div>
+    <div class="cardio-field">
+      <label>Avg Heart Rate <span>(optional)</span></label>
+      <div class="cardio-input-row">
+        <input class="cardio-input" id="cardio-hr" type="number" min="0" max="250" placeholder="155">
+        <span class="cardio-unit-label">bpm</span>
+      </div>
+    </div>
+    <div class="cardio-field">
+      <label>Notes <span>(optional)</span></label>
+      <input class="cardio-input" id="cardio-notes" type="text" placeholder="Easy effort, trail, etc.">
+    </div>
+    <button class="btn-add-custom" onclick="saveCardioSession()">Save Session</button>
   </div>
 </div>
 
@@ -1189,7 +1318,14 @@ const TYPE_NAMES = {
   group_a: { title: 'Group A Workout',    emoji: '🅰️' },
   group_b: { title: 'Group B Workout',    emoji: '🅱️' },
   group_c: { title: 'Group C Workout',    emoji: '⚡' },
+  run:     { title: 'Run',                emoji: '🏃' },
+  cycle:   { title: 'Cycle',              emoji: '🚴' },
+  hike:    { title: 'Hike',               emoji: '🥾' },
+  swim:    { title: 'Swim',               emoji: '🏊' },
 };
+
+const CARDIO_TYPES = new Set(['run', 'cycle', 'hike', 'swim']);
+function isCardio(type) { return CARDIO_TYPES.has(type); }
 
 // ─── Swap Recommendations ────────────────────────────────────────────────────
 
@@ -1842,6 +1978,233 @@ function convertWeight(value, fromUnit, toUnit) {
   return isNaN(converted) ? value : String(Math.round(converted * 10) / 10);
 }
 
+// ─── Cardio Logging ───────────────────────────────────────────────────────────
+
+let _cardioType = 'run';
+
+function openCardioLog(type) {
+  _cardioType = type;
+  // Highlight the card
+  document.querySelectorAll('.workout-card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.workout-card[data-type="${type}"]`)?.classList.add('active');
+
+  const info = TYPE_NAMES[type];
+  document.getElementById('cardio-log-title').textContent = `${info.emoji} Log ${info.title}`;
+
+  // Reset form
+  ['cardio-dist','cardio-dur-h','cardio-dur-m','cardio-dur-s','cardio-elev','cardio-hr','cardio-notes']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('cardio-pace-row').textContent = 'Pace: —';
+
+  // Unit defaults
+  const distSel = document.getElementById('cardio-dist-unit');
+  if (type === 'swim') { distSel.value = 'm'; }
+  else { distSel.value = selectedUnit === 'kg' ? 'km' : 'mi'; }
+
+  // Show/hide elevation field (hike + cycle only)
+  document.getElementById('cardio-elev-field').style.display =
+    (type === 'hike' || type === 'cycle') ? 'block' : 'none';
+
+  document.getElementById('cardio-log-modal').classList.add('open');
+}
+
+function closeCardioLog() {
+  document.getElementById('cardio-log-modal').classList.remove('open');
+}
+
+function updateCardioPace() {
+  const dist    = parseFloat(document.getElementById('cardio-dist').value) || 0;
+  const distUnit= document.getElementById('cardio-dist-unit').value;
+  const h       = parseInt(document.getElementById('cardio-dur-h').value) || 0;
+  const m       = parseInt(document.getElementById('cardio-dur-m').value) || 0;
+  const s       = parseInt(document.getElementById('cardio-dur-s').value) || 0;
+  const durMin  = h * 60 + m + s / 60;
+  const el      = document.getElementById('cardio-pace-row');
+
+  if (!dist || !durMin) { el.textContent = 'Pace: —'; return; }
+
+  let pace = '';
+  if (_cardioType === 'run' || _cardioType === 'hike') {
+    const paceMin = durMin / dist;
+    const pm = Math.floor(paceMin), ps = Math.round((paceMin - pm) * 60);
+    pace = `${pm}:${String(ps).padStart(2,'0')} /${distUnit}`;
+  } else if (_cardioType === 'cycle') {
+    pace = `${(dist / (durMin / 60)).toFixed(1)} ${distUnit}/hr`;
+  } else if (_cardioType === 'swim') {
+    const meters = distUnit === 'm' ? dist : dist * 0.9144;
+    const per100 = durMin / (meters / 100);
+    const pm = Math.floor(per100), ps = Math.round((per100 - pm) * 60);
+    pace = `${pm}:${String(ps).padStart(2,'0')} /100m`;
+  }
+  el.innerHTML = `Pace: <span>${pace}</span>`;
+}
+
+function toMiles(dist, unit) {
+  if (unit === 'km') return dist * 0.621371;
+  if (unit === 'm')  return dist * 0.000621371;
+  return dist;
+}
+function toFeet(elev, unit) { return unit === 'm' ? elev * 3.28084 : elev; }
+
+function calcLoadPoints(session) {
+  if (isCardio(session.type)) {
+    const c = session.cardio;
+    if (!c) return 0;
+    const durMin = (c.durationH || 0) * 60 + (c.durationM || 0) + (c.durationS || 0) / 60;
+    const dist = parseFloat(c.distance) || 0;
+    switch (session.type) {
+      case 'run': {
+        const miles = toMiles(dist, c.distUnit);
+        const minPerMile = miles > 0 && durMin > 0 ? durMin / miles : 10;
+        return Math.round(miles * (12 / minPerMile) * 10) / 10;
+      }
+      case 'cycle': return Math.round(toMiles(dist, c.distUnit) * 0.4 * 10) / 10;
+      case 'hike': {
+        const miles = toMiles(dist, c.distUnit);
+        const elevFt = c.elevation ? toFeet(parseFloat(c.elevation) || 0, c.elevUnit || 'ft') : 0;
+        return Math.round((miles * 0.6 + elevFt / 1500) * 10) / 10;
+      }
+      case 'swim': {
+        const meters = c.distUnit === 'm' ? dist : dist * 0.9144;
+        return Math.round(meters / 80 * 10) / 10;
+      }
+      default: return 0;
+    }
+  } else {
+    let volLbs = 0;
+    (session.exercises || []).forEach(ex => {
+      ex.sets.forEach(s => {
+        const w = parseFloat(s.weight) || 0;
+        const r = parseInt(s.reps) || 0;
+        volLbs += (session.unit === 'kg' ? w * 2.20462 : w) * r;
+      });
+    });
+    return Math.round(volLbs / 500 * 10) / 10;
+  }
+}
+
+function saveCardioSession() {
+  const dist    = parseFloat(document.getElementById('cardio-dist').value);
+  const distUnit= document.getElementById('cardio-dist-unit').value;
+  const h       = parseInt(document.getElementById('cardio-dur-h').value) || 0;
+  const m       = parseInt(document.getElementById('cardio-dur-m').value) || 0;
+  const s       = parseInt(document.getElementById('cardio-dur-s').value) || 0;
+
+  if (!dist || (h + m + s === 0)) { toast('Enter distance and duration!'); return; }
+
+  const session = {
+    id:   Date.now(),
+    date: new Date().toLocaleString(),
+    type: _cardioType,
+    cardio: {
+      distance:  dist,
+      distUnit,
+      durationH: h, durationM: m, durationS: s,
+      elevation: parseFloat(document.getElementById('cardio-elev').value) || null,
+      elevUnit:  document.getElementById('cardio-elev-unit').value,
+      hr:        parseInt(document.getElementById('cardio-hr').value) || null,
+      notes:     document.getElementById('cardio-notes').value.trim() || null,
+    },
+    exercises: [],
+  };
+  session.cardio.loadPoints = calcLoadPoints(session);
+
+  const h2 = getHistory();
+  h2.push(session);
+  saveHistory(h2);
+  renderCalendar();
+  renderLoadDashboard();
+  closeCardioLog();
+  openSummary(session);
+}
+
+// ─── Training Load Dashboard ──────────────────────────────────────────────────
+
+function renderLoadDashboard() {
+  const h = getHistory();
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+
+  // Build 28-day LP map
+  const days = [];
+  for (let i = 27; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    days.push({ date: d, lp: 0, types: [] });
+  }
+
+  h.forEach(sess => {
+    const sd = new Date(sess.date); sd.setHours(0, 0, 0, 0);
+    const idx = days.findIndex(d => d.date.getTime() === sd.getTime());
+    if (idx === -1) return;
+    const lp = sess.cardio?.loadPoints ?? calcLoadPoints(sess);
+    days[idx].lp += lp;
+    if (!days[idx].types.includes(sess.type)) days[idx].types.push(sess.type);
+  });
+
+  const maxLP = Math.max(...days.map(d => d.lp), 1);
+
+  // Bars
+  const barsEl = document.getElementById('load-bars');
+  barsEl.innerHTML = days.map(d => {
+    const pct = Math.max(d.lp / maxLP, d.lp > 0 ? 0.05 : 0);
+    const h   = Math.round(pct * 100);
+    let zone  = 'zone-rest';
+    if (d.lp > 0)  zone = 'zone-easy';
+    if (d.lp > 30) zone = 'zone-mod';
+    if (d.lp > 60) zone = 'zone-hard';
+    if (d.lp > 90) zone = 'zone-max';
+    const tip = d.lp > 0 ? `${d.lp.toFixed(1)} LP` : '';
+    return `<div class="load-bar-col" title="${tip}"><div class="load-bar ${zone}" style="height:${h}%"></div></div>`;
+  }).join('');
+
+  // Week labels (4 week-start labels)
+  const wlEl = document.getElementById('load-week-label');
+  const weekStarts = [days[0], days[7], days[14], days[21]];
+  wlEl.innerHTML = weekStarts.map(d => {
+    const label = d.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return `<span>${label}</span>`;
+  }).join('');
+
+  // Totals: 7-day, prev 7-day, 28-day
+  const lp7  = days.slice(-7).reduce((s, d) => s + d.lp, 0);
+  const lp7p = days.slice(-14, -7).reduce((s, d) => s + d.lp, 0);
+  const lp28 = days.reduce((s, d) => s + d.lp, 0);
+  const diff = lp7p > 0 ? Math.round((lp7 - lp7p) / lp7p * 100) : null;
+  const diffHtml = diff !== null
+    ? `<div class="load-total-sub" style="color:${diff >= 0 ? 'var(--green)' : 'var(--red)'}">
+        ${diff >= 0 ? '↑' : '↓'}${Math.abs(diff)}% vs prev week
+       </div>` : '';
+
+  document.getElementById('load-totals').innerHTML = `
+    <div class="load-total">
+      <div class="load-total-value">${Math.round(lp7)}</div>
+      ${diffHtml}
+      <div class="load-total-label">7-Day LP</div>
+    </div>
+    <div class="load-total">
+      <div class="load-total-value">${Math.round(lp28)}</div>
+      <div class="load-total-label">28-Day LP</div>
+    </div>
+  `;
+
+  // Type breakdown
+  const byType = {};
+  h.forEach(sess => {
+    const sd = new Date(sess.date); sd.setHours(0, 0, 0, 0);
+    if ((today - sd) / 86400000 > 28) return;
+    const lp = sess.cardio?.loadPoints ?? calcLoadPoints(sess);
+    const t = sess.type;
+    const group = isCardio(t) ? t : 'gym';
+    byType[group] = (byType[group] || 0) + lp;
+  });
+  const typeLabels = { gym: '💪 Gym', run: '🏃 Run', cycle: '🚴 Cycle', hike: '🥾 Hike', swim: '🏊 Swim' };
+  document.getElementById('load-type-breakdown').innerHTML =
+    Object.entries(byType)
+      .filter(([, v]) => v > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([k, v]) => `<div class="load-type-chip">${typeLabels[k] || k}: ${Math.round(v)}</div>`)
+      .join('');
+}
+
 // ─── Workout Summary ──────────────────────────────────────────────────────────
 
 let _summarySession = null;
@@ -1851,6 +2214,11 @@ function openSummary(session) {
   const typeInfo = TYPE_NAMES[session.type] || { emoji: '🏋️', title: session.type };
   document.getElementById('summary-title').textContent = `${typeInfo.emoji} ${typeInfo.title}`;
   document.getElementById('summary-date').textContent  = session.date;
+
+  if (isCardio(session.type)) {
+    _openCardioSummary(session, typeInfo);
+    return;
+  }
 
   // Stats
   const totalSets = session.exercises.reduce((s, e) => s + e.sets.length, 0);
@@ -1912,6 +2280,50 @@ function openSummary(session) {
     </div>`;
   }).join('');
 
+  document.getElementById('summary-modal').classList.add('open');
+}
+
+function _openCardioSummary(session, typeInfo) {
+  const c = session.cardio;
+  const h = (c.durationH || 0), m = (c.durationM || 0), s2 = (c.durationS || 0);
+  const durStr = h > 0
+    ? `${h}h ${m}m`
+    : `${m}:${String(s2).padStart(2,'0')}`;
+  const distStr = `${c.distance} ${c.distUnit}`;
+  const lp = (c.loadPoints || calcLoadPoints(session)).toFixed(1);
+
+  // Pace
+  const durMin = h * 60 + m + s2 / 60;
+  let paceStr = '—';
+  const dist = parseFloat(c.distance) || 0;
+  if (dist && durMin) {
+    if (session.type === 'run' || session.type === 'hike') {
+      const pm2 = durMin / dist, mm = Math.floor(pm2), ss = Math.round((pm2 - mm) * 60);
+      paceStr = `${mm}:${String(ss).padStart(2,'0')} /${c.distUnit}`;
+    } else if (session.type === 'cycle') {
+      paceStr = `${(dist / (durMin / 60)).toFixed(1)} ${c.distUnit}/hr`;
+    } else if (session.type === 'swim') {
+      const meters = c.distUnit === 'm' ? dist : dist * 0.9144;
+      const per100 = durMin / (meters / 100);
+      const mm = Math.floor(per100), ss = Math.round((per100 - mm) * 60);
+      paceStr = `${mm}:${String(ss).padStart(2,'0')} /100m`;
+    }
+  }
+
+  document.getElementById('summary-stats').innerHTML = `
+    <div class="summary-stat"><div class="summary-stat-value">${distStr}</div><div class="summary-stat-label">Distance</div></div>
+    <div class="summary-stat"><div class="summary-stat-value">${durStr}</div><div class="summary-stat-label">Duration</div></div>
+    <div class="summary-stat"><div class="summary-stat-value">${lp}</div><div class="summary-stat-label">Load Pts</div></div>
+  `;
+  document.getElementById('summary-prs').innerHTML = '';
+  let extras = '';
+  if (c.hr)    extras += `<div class="summary-ex-row"><span class="summary-ex-name">Avg HR</span><span class="summary-ex-sets">${c.hr} bpm</span></div>`;
+  if (session.type === 'hike' || session.type === 'cycle') {
+    if (c.elevation) extras += `<div class="summary-ex-row"><span class="summary-ex-name">Elevation Gain</span><span class="summary-ex-sets">${c.elevation} ${c.elevUnit || 'ft'}</span></div>`;
+  }
+  extras += `<div class="summary-ex-row"><span class="summary-ex-name">Pace</span><span class="summary-ex-sets">${paceStr}</span></div>`;
+  if (c.notes) extras += `<div class="summary-ex-row"><span class="summary-ex-name">Notes</span><span class="summary-ex-sets">${c.notes}</span></div>`;
+  document.getElementById('summary-exercises').innerHTML = extras;
   document.getElementById('summary-modal').classList.add('open');
 }
 
@@ -2074,6 +2486,7 @@ function finishWorkout() {
   h.push(session);
   saveHistory(h);
   renderCalendar();
+  renderLoadDashboard();
   openSummary(session);
 }
 
@@ -2085,23 +2498,57 @@ function openHistory() {
   if (!h.length) {
     body.innerHTML = `<div class="history-empty">No workouts saved yet.<br>Complete a session to see history here.</div>`;
   } else {
-    body.innerHTML = h.map(sess => `
-      <div class="history-session">
+    body.innerHTML = h.map(sess => {
+      const typeInfo = TYPE_NAMES[sess.type] || { emoji: '🏋️', title: sess.type };
+      const diffLine = sess.diff ? ` · ${cap(sess.diff)}` : '';
+      let body2 = '';
+      if (isCardio(sess.type) && sess.cardio) {
+        const c = sess.cardio;
+        const durMin = (c.durationH||0)*60 + (c.durationM||0) + (c.durationS||0)/60;
+        const h2 = c.durationH||0, m2 = c.durationM||0, s2 = c.durationS||0;
+        const durStr = h2 > 0 ? `${h2}h ${m2}m` : `${m2}:${String(s2).padStart(2,'0')}`;
+        const lp = (c.loadPoints || calcLoadPoints(sess)).toFixed(1);
+        const dist = parseFloat(c.distance)||0;
+        let paceStr = '';
+        if (dist && durMin) {
+          if (sess.type === 'run' || sess.type === 'hike') {
+            const pm = durMin/dist, mm = Math.floor(pm), ss = Math.round((pm-mm)*60);
+            paceStr = ` · ${mm}:${String(ss).padStart(2,'0')}/${c.distUnit}`;
+          } else if (sess.type === 'cycle') {
+            paceStr = ` · ${(dist/(durMin/60)).toFixed(1)} ${c.distUnit}/hr`;
+          } else if (sess.type === 'swim') {
+            const meters = c.distUnit==='m' ? dist : dist*0.9144;
+            const per100 = durMin/(meters/100);
+            const mm = Math.floor(per100), ss = Math.round((per100-mm)*60);
+            paceStr = ` · ${mm}:${String(ss).padStart(2,'0')}/100m`;
+          }
+        }
+        body2 = `<div class="history-exercise">
+          <strong>${c.distance} ${c.distUnit}</strong> in ${durStr}${paceStr}
+          <span style="color:var(--accent);margin-left:8px">${lp} LP</span>
+        </div>`;
+        if (c.elevation) body2 += `<div class="history-set">Elevation: ${c.elevation} ${c.elevUnit||'ft'}</div>`;
+        if (c.hr)        body2 += `<div class="history-set">Avg HR: ${c.hr} bpm</div>`;
+        if (c.notes)     body2 += `<div class="history-set">${c.notes}</div>`;
+      } else {
+        body2 = (sess.exercises||[]).map(ex => `
+          <div class="history-exercise"><strong>${ex.name}</strong></div>
+          ${ex.sets.map((s, i) => `
+            <div class="history-set">S${i+1}: ${s.weight ? s.weight+(sess.unit||'lb') : '—'} × ${s.reps||'—'} reps</div>
+          `).join('')}
+        `).join('');
+      }
+      return `<div class="history-session">
         <div class="history-session-header">
           <div class="history-session-title">
-            ${TYPE_NAMES[sess.type]?.emoji || '🏋️'} ${TYPE_NAMES[sess.type]?.title || sess.type}
-            <span style="color:var(--muted);font-weight:400;font-size:12px"> · ${cap(sess.diff)}</span>
+            ${typeInfo.emoji} ${typeInfo.title}
+            <span style="color:var(--text3);font-weight:400;font-size:12px">${diffLine}</span>
           </div>
           <div class="history-session-date">${sess.date}</div>
         </div>
-        ${sess.exercises.map(ex => `
-          <div class="history-exercise"><strong>${ex.name}</strong></div>
-          ${ex.sets.map((s, i) => `
-            <div class="history-set">S${i + 1}: ${s.weight ? s.weight + (sess.unit || 'lb') : '—'} × ${s.reps || '—'} reps</div>
-          `).join('')}
-        `).join('')}
-      </div>
-    `).join('');
+        ${body2}
+      </div>`;
+    }).join('');
   }
 
   panel.classList.add('open');
@@ -3111,6 +3558,7 @@ restoreSessionState();
 renderTimer();
 renderCalendar();
 renderCycleCard();
+renderLoadDashboard();
 initFileSync();
 generateAppIcon();
 
