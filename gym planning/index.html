@@ -266,6 +266,22 @@
   .prev-hint { font-size: 11px; color: var(--text2); text-align: center; padding-top: 3px; }
   .cycle-hint { font-size: 10px; font-weight: 700; color: var(--accent); text-align: center; padding-top: 2px; }
 
+  /* Set timer (time-based reps) */
+  .set-time-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .set-time-btn {
+    background: var(--surface2); border: none; border-radius: 20px;
+    padding: 5px 12px; font-size: 13px; font-weight: 700; color: var(--accent);
+    cursor: pointer; font-family: inherit; min-width: 62px; text-align: center;
+    transition: background 0.15s, color 0.15s;
+  }
+  .set-time-btn.running { background: rgba(255,159,10,0.2); color: var(--accent); }
+  .set-time-btn.done    { background: rgba(50,215,75,0.15);  color: var(--green); }
+  .set-time-input {
+    width: 58px; background: var(--surface2); border: none; border-radius: 8px;
+    padding: 5px 6px; color: #fff; font-size: 13px; text-align: center;
+    outline: none; font-family: inherit;
+  }
+
   /* Mesocycle status card */
   .btn-start-cycle {
     display: block; width: 100%; margin-bottom: 20px;
@@ -1457,11 +1473,23 @@ function renderSets(idx) {
         ${cycleTipHtml}
         ${isPR ? '<div class="pr-badge">🏆 New PR!</div>' : ''}
       </td>
-      <td>
-        <input type="number" min="0" class="set-input"
+      <td>${(() => {
+        const repStr = ex.reps ? (ex.reps[selectedGoal] || '') : '';
+        const isTime = repStr.includes('sec');
+        if (!isTime) return `<input type="number" min="0" class="set-input"
           placeholder="reps" value="${s.reps}"
-          onchange="updateSet(${idx},${si},'reps',this.value)">
-      </td>
+          onchange="updateSet(${idx},${si},'reps',this.value)">`;
+        const secs = parseInt(repStr) || 30;
+        const btnLabel = s.reps ? `✓ ${s.reps}s` : `▶ ${secs}s`;
+        const btnClass = s.reps ? 'done' : '';
+        return `<div class="set-time-cell">
+          <button class="set-time-btn ${btnClass}" id="set-time-btn-${idx}-${si}"
+            onclick="startSetTimer(${idx},${si},${secs})">${btnLabel}</button>
+          <input type="number" class="set-time-input" placeholder="sec" value="${s.reps}"
+            onchange="updateSet(${idx},${si},'reps',this.value)"
+            id="set-reps-${idx}-${si}">
+        </div>`;
+      })()}</td>
       <td class="center">
         <button class="set-done-btn${s.done ? ' done' : ''}"
           onclick="toggleSetDone(${idx},${si})" title="Mark done">
@@ -2579,6 +2607,59 @@ window.addEventListener('resize', () => {
   if (!landscape && _wasLandscape) location.reload();
   _wasLandscape = landscape;
 });
+
+// ─── Set timer (time-based reps) ─────────────────────────────────────────────
+
+let _setTimerInterval = null;
+let _setTimerKey = null;
+
+function startSetTimer(idx, si, totalSecs) {
+  const key = `${idx}-${si}`;
+  const btn = document.getElementById(`set-time-btn-${idx}-${si}`);
+  if (!btn) return;
+
+  // If already running this timer, cancel it
+  if (_setTimerKey === key && _setTimerInterval) {
+    clearInterval(_setTimerInterval);
+    _setTimerInterval = null;
+    _setTimerKey = null;
+    btn.textContent = `▶ ${totalSecs}s`;
+    btn.className = 'set-time-btn';
+    return;
+  }
+
+  // Cancel any previously running set timer
+  if (_setTimerInterval) {
+    clearInterval(_setTimerInterval);
+    const [pi, psi] = (_setTimerKey || '').split('-');
+    const prevBtn = document.getElementById(`set-time-btn-${pi}-${psi}`);
+    if (prevBtn) { prevBtn.textContent = `▶ ${parseInt(prevBtn.dataset.total || totalSecs)}s`; prevBtn.className = 'set-time-btn'; }
+  }
+
+  _setTimerKey = key;
+  btn.dataset.total = totalSecs;
+  let remaining = totalSecs;
+  btn.textContent = `${remaining}s`;
+  btn.className = 'set-time-btn running';
+
+  _setTimerInterval = setInterval(() => {
+    remaining--;
+    if (remaining > 0) {
+      btn.textContent = `${remaining}s`;
+    } else {
+      clearInterval(_setTimerInterval);
+      _setTimerInterval = null;
+      _setTimerKey = null;
+      btn.textContent = `✓ ${totalSecs}s`;
+      btn.className = 'set-time-btn done';
+      // Auto-fill the reps input and save
+      const input = document.getElementById(`set-reps-${idx}-${si}`);
+      if (input) { input.value = String(totalSecs); }
+      updateSet(idx, si, 'reps', String(totalSecs));
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    }
+  }, 1000);
+}
 
 // ─── Mesocycle ───────────────────────────────────────────────────────────────
 
