@@ -353,11 +353,16 @@
 
   /* Rest timer */
   .timer-bar {
-    display: none; background: var(--surface); border: none;
-    border-radius: 18px; padding: 16px 18px; margin-bottom: 20px;
+    display: none;
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
+    background: rgba(28,28,30,0.92);
+    backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-top: 0.5px solid var(--sep);
+    padding: 12px 20px 28px;
     align-items: center; gap: 16px;
   }
   .timer-bar.visible { display: flex; }
+  body.timer-visible { padding-bottom: 90px; }
   .timer-display { font-size: 32px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--accent); min-width: 88px; letter-spacing: -1px; }
   .timer-label { font-size: 12px; color: var(--text2); font-weight: 500; margin-top: 1px; }
   .timer-actions { display: flex; gap: 6px; margin-left: auto; }
@@ -1342,6 +1347,7 @@ function renderPlan() {
 
   plan.style.display = 'block';
   document.getElementById('timer-bar').classList.add('visible');
+  document.body.classList.add('timer-visible');
 
   plan.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -1996,6 +2002,7 @@ function clearAll() {
   currentPlan = [];
   document.getElementById('workout-plan').style.display = 'none';
   document.getElementById('timer-bar').classList.remove('visible');
+  document.body.classList.remove('timer-visible');
   document.getElementById('exercises-list').innerHTML = '';
   clearInterval(timerInterval);
   timerRunning = false;
@@ -2757,6 +2764,19 @@ renderCalendar();
 renderCycleCard();
 initFileSync();
 generateAppIcon();
+
+// ─── Wake Lock ───────────────────────────────────────────────────────────────
+let _wakeLock = null;
+async function _acquireWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    _wakeLock = await navigator.wakeLock.request('screen');
+  } catch {}
+}
+_acquireWakeLock();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') _acquireWakeLock();
+});
 </script>
 </body>
 </html>
