@@ -266,6 +266,26 @@
   .prev-hint { font-size: 11px; color: var(--text2); text-align: center; padding-top: 3px; }
   .cycle-hint { font-size: 10px; font-weight: 700; color: var(--accent); text-align: center; padding-top: 2px; }
 
+  /* RPE modal */
+  .rpe-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 16px;
+  }
+  .rpe-btn {
+    background: var(--surface2); border: none; border-radius: 10px;
+    padding: 10px 4px 6px; cursor: pointer; display: flex; flex-direction: column;
+    align-items: center; gap: 3px; transition: background 0.15s;
+  }
+  .rpe-btn:first-child { font-size: 18px; font-weight: 800; color: var(--text2); }
+  .rpe-btn { font-size: 18px; font-weight: 800; color: var(--text2); }
+  .rpe-btn span { font-size: 9px; font-weight: 600; color: var(--text3); text-align: center; line-height: 1.2; }
+  .rpe-btn.active { background: var(--accent); color: #000; }
+  .rpe-btn.active span { color: rgba(0,0,0,0.6); }
+  .rpe-preview {
+    text-align: center; font-size: 14px; font-weight: 600; color: var(--text2);
+    margin: -8px 0 18px; min-height: 20px;
+  }
+  .rpe-preview span { color: var(--accent); }
+
   /* Cardio log modal */
   .cardio-field { margin-bottom: 16px; }
   .cardio-field label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text3); margin-bottom: 6px; }
@@ -1082,6 +1102,37 @@
         <button class="btn-add-custom" onclick="addCustomExercise()">Add to Workout</button>
       </div>
     </div>
+  </div>
+</div>
+
+<div id="rpe-modal" class="swap-modal" onclick="if(event.target===this)closeRPE()">
+  <div class="swap-modal-inner">
+    <div class="swap-modal-header">
+      <h3>⏱ Rate Your Session</h3>
+      <button class="close-btn" onclick="closeRPE()">×</button>
+    </div>
+    <p style="font-size:14px;color:var(--text2);margin:0 0 20px">No weights logged — rate effort to calculate training load.</p>
+    <div class="cardio-field">
+      <label>Duration (minutes)</label>
+      <input class="cardio-input" id="rpe-duration" type="number" min="1" max="240" placeholder="30" oninput="_updateRPEPreview()">
+    </div>
+    <div class="cardio-field">
+      <label>RPE — Perceived Effort</label>
+      <div class="rpe-grid" id="rpe-grid">
+        <button class="rpe-btn" data-rpe="1" onclick="selectRPE(1)">1<span>Very Easy</span></button>
+        <button class="rpe-btn" data-rpe="2" onclick="selectRPE(2)">2<span></span></button>
+        <button class="rpe-btn" data-rpe="3" onclick="selectRPE(3)">3<span>Easy</span></button>
+        <button class="rpe-btn" data-rpe="4" onclick="selectRPE(4)">4<span></span></button>
+        <button class="rpe-btn" data-rpe="5" onclick="selectRPE(5)">5<span>Moderate</span></button>
+        <button class="rpe-btn" data-rpe="6" onclick="selectRPE(6)">6<span></span></button>
+        <button class="rpe-btn" data-rpe="7" onclick="selectRPE(7)">7<span>Hard</span></button>
+        <button class="rpe-btn" data-rpe="8" onclick="selectRPE(8)">8<span></span></button>
+        <button class="rpe-btn" data-rpe="9" onclick="selectRPE(9)">9<span>Very Hard</span></button>
+        <button class="rpe-btn" data-rpe="10" onclick="selectRPE(10)">10<span>Max</span></button>
+      </div>
+    </div>
+    <div class="rpe-preview" id="rpe-preview"></div>
+    <button class="btn-add-custom" onclick="saveRPESession()">Save Session</button>
   </div>
 </div>
 
@@ -1996,6 +2047,64 @@ function convertWeight(value, fromUnit, toUnit) {
   return isNaN(converted) ? value : String(Math.round(converted * 10) / 10);
 }
 
+// ─── RPE / Bodyweight Session Rating ─────────────────────────────────────────
+
+let _rpeSession = null;
+let _selectedRPE = 7;
+
+function openRPE(session) {
+  _rpeSession = session;
+  _selectedRPE = 7;
+  document.getElementById('rpe-duration').value = '';
+  document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.rpe-btn[data-rpe="7"]`)?.classList.add('active');
+  _updateRPEPreview();
+  document.getElementById('rpe-modal').classList.add('open');
+}
+
+function closeRPE() {
+  // Save without RPE data (LP will be 0) if user dismisses
+  if (_rpeSession) _commitSession(_rpeSession);
+  document.getElementById('rpe-modal').classList.remove('open');
+  _rpeSession = null;
+}
+
+function selectRPE(val) {
+  _selectedRPE = val;
+  document.querySelectorAll('.rpe-btn').forEach(b =>
+    b.classList.toggle('active', parseInt(b.dataset.rpe) === val));
+  _updateRPEPreview();
+}
+
+function _updateRPEPreview() {
+  const dur = parseInt(document.getElementById('rpe-duration').value) || 0;
+  const lp  = dur ? Math.round(dur * _selectedRPE / 4) : null;
+  const el  = document.getElementById('rpe-preview');
+  el.innerHTML = lp !== null
+    ? `Training load: <span>${lp} LP</span>`
+    : 'Enter duration to see load estimate';
+}
+
+function saveRPESession() {
+  const dur = parseInt(document.getElementById('rpe-duration').value);
+  if (!dur || dur < 1) { toast('Enter session duration!'); return; }
+  _rpeSession.durationMin = dur;
+  _rpeSession.rpe         = _selectedRPE;
+  _rpeSession.sessionLP   = Math.round(dur * _selectedRPE / 4);
+  document.getElementById('rpe-modal').classList.remove('open');
+  _commitSession(_rpeSession);
+  _rpeSession = null;
+}
+
+function _commitSession(session) {
+  const h = getHistory();
+  h.push(session);
+  saveHistory(h);
+  renderCalendar();
+  renderLoadDashboard();
+  openSummary(session);
+}
+
 // ─── Cardio Logging ───────────────────────────────────────────────────────────
 
 let _cardioType = 'run';
@@ -2065,6 +2174,8 @@ function toMiles(dist, unit) {
 function toFeet(elev, unit) { return unit === 'm' ? elev * 3.28084 : elev; }
 
 function calcLoadPoints(session) {
+  // Explicit session LP (RPE-based for bodyweight sessions)
+  if (session.sessionLP != null) return session.sessionLP;
   if (isCardio(session.type)) {
     const c = session.cardio;
     if (!c) return 0;
@@ -2590,12 +2701,15 @@ function finishWorkout() {
     })).filter(e => e.sets.length > 0),
   };
 
-  const h = getHistory();
-  h.push(session);
-  saveHistory(h);
-  renderCalendar();
-  renderLoadDashboard();
-  openSummary(session);
+  // If no weighted volume, prompt for RPE/duration instead of saving directly
+  const totalVol = session.exercises.reduce((sum, ex) =>
+    sum + ex.sets.reduce((s2, s) => s2 + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0), 0);
+  if (totalVol === 0) {
+    openRPE(session);
+    return;
+  }
+
+  _commitSession(session);
 }
 
 function openHistory() {
