@@ -59,6 +59,25 @@
   .logo span { color: var(--accent); }
   .logo-subtitle { font-size: 11px; color: var(--text2); letter-spacing: 0.1px; margin-top: 1px; }
   .header-actions { display: flex; gap: 8px; }
+  /* Overflow menu */
+  .btn-overflow { position: relative; }
+  .header-actions { position: relative; }
+  .overflow-menu {
+    display: none; position: absolute; top: calc(100% + 8px); right: 0;
+    background: var(--surface2); border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5); z-index: 300;
+    min-width: 180px; overflow: hidden;
+  }
+  .overflow-menu.open { display: block; }
+  .overflow-menu button {
+    display: block; width: 100%; background: none; border: none;
+    padding: 13px 16px; text-align: left; color: var(--text);
+    font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit;
+    border-bottom: 0.5px solid var(--sep);
+  }
+  .overflow-menu button:last-child { border-bottom: none; }
+  .overflow-menu button:active { background: var(--surface3); }
+
   .btn-ghost {
     background: var(--surface2);
     border: none;
@@ -86,50 +105,81 @@
     padding-left: 2px;
   }
 
-  /* Workout type cards */
+  /* Workout type cards — horizontal scroll strip */
   .workout-picker {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-bottom: 28px;
+    display: flex; flex-direction: row;
+    gap: 8px; margin-bottom: 20px;
+    overflow-x: auto; padding-bottom: 6px;
+    scrollbar-width: none; -ms-overflow-style: none;
   }
+  .workout-picker::-webkit-scrollbar { display: none; }
   .workout-card {
     background: var(--surface);
-    border: none;
-    border-radius: 20px;
-    padding: 22px 16px;
+    border: none; border-radius: 16px;
+    padding: 14px 12px; min-width: 80px; flex: 0 0 auto;
     cursor: pointer;
     transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
+    text-align: center; position: relative; overflow: hidden;
   }
   .workout-card::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: var(--accent);
-    opacity: 0;
-    transition: opacity 0.2s;
+    content: ''; position: absolute; inset: 0;
+    background: var(--accent); opacity: 0; transition: opacity 0.2s;
   }
-  .workout-card:hover { transform: scale(1.03); }
+  .workout-card:hover { transform: scale(1.04); }
   .workout-card:hover::before { opacity: 0.07; }
   .workout-card.active { box-shadow: 0 0 0 2px var(--accent); }
   .workout-card.active::before { opacity: 0.09; }
-  .card-emoji { font-size: 34px; margin-bottom: 10px; display: block; }
-  .card-title { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
-  .card-desc { font-size: 12px; color: var(--text2); line-height: 1.4; }
-  .card-badge {
-    position: absolute; top: 10px; right: 10px;
-    background: var(--accent);
-    color: #000;
-    font-size: 10px; font-weight: 700;
-    padding: 3px 8px; border-radius: 20px;
-    opacity: 0; transition: opacity 0.2s;
-  }
-  .workout-card.active .card-badge { opacity: 1; }
+  .card-emoji { font-size: 26px; margin-bottom: 6px; display: block; }
+  .card-title { font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .card-desc { display: none; }
+  .card-badge { display: none; }
 
-  /* Options row */
-  .workout-meta { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+  /* Compact options bar */
+  .meta-compact {
+    display: flex; align-items: center; gap: 0;
+    margin-bottom: 20px;
+    background: var(--surface); border-radius: 14px; padding: 6px 8px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .meta-compact::-webkit-scrollbar { display: none; }
+  .meta-compact-sep { width: 1px; background: var(--sep); height: 20px; flex-shrink: 0; margin: 0 6px; }
+  .meta-compact-group { display: flex; gap: 4px; flex-shrink: 0; }
+  .meta-compact .pill { padding: 5px 11px; font-size: 12px; }
+
+  /* Cardio type picker */
+  .cardio-type-sheet { padding: 20px 20px 32px; }
+  .cardio-type-sheet h3 { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+  .cardio-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .cardio-type-btn {
+    background: var(--surface2); border: none; border-radius: 16px;
+    padding: 18px 10px; cursor: pointer; display: flex; flex-direction: column;
+    align-items: center; gap: 8px; transition: background 0.15s;
+  }
+  .cardio-type-btn:active { opacity: 0.7; }
+  .cardio-type-btn .ct-emoji { font-size: 30px; }
+  .cardio-type-btn .ct-label { font-size: 14px; font-weight: 700; color: #fff; }
+  .cardio-type-btn .ct-sub { font-size: 11px; color: var(--text2); }
+
+  /* Collapsible load section */
+  .load-toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; user-select: none; padding: 2px 0; margin-bottom: 0;
+  }
+  .load-toggle-row .load-headline {
+    font-size: 12px; font-weight: 600; color: var(--text2);
+    text-transform: uppercase; letter-spacing: 0.8px;
+  }
+  .load-toggle-row .load-summary-text {
+    font-size: 13px; font-weight: 700; color: var(--accent); margin-left: 8px;
+  }
+  .load-toggle-row .load-chevron {
+    font-size: 11px; color: var(--text3); transition: transform 0.2s;
+  }
+  .load-toggle-row.open .load-chevron { transform: rotate(180deg); }
+  #load-collapsible { overflow: hidden; }
+
+  /* Options row (legacy, keep pills working) */
+  .workout-meta { display: none; } /* hidden — replaced by meta-compact */
   .meta-group { display: flex; flex-direction: column; gap: 8px; }
   .meta-group label { font-size: 12px; color: var(--text2); font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; padding-left: 2px; }
   .pills { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -755,7 +805,7 @@
   }
 
   @media (max-width: 600px) {
-    .workout-picker { grid-template-columns: 1fr; }
+    .workout-picker { gap: 6px; }
     .plan-stats { flex-wrap: wrap; }
     #history-panel { width: 100%; }
     /* Trends panel — full width on mobile */
@@ -815,86 +865,76 @@
     <button class="btn-ghost" onclick="openPRs()">🏆 PRs</button>
     <button class="btn-ghost" onclick="openTrends()">📈 Trends</button>
     <button class="btn-ghost" onclick="openHistory()">📋 History</button>
-    <button class="btn-ghost" onclick="clearAll()">🗑 Clear</button>
+    <button class="btn-ghost btn-overflow" onclick="toggleOverflow(event)">⋯</button>
+    <div class="overflow-menu" id="overflow-menu">
+      <button onclick="clearAll();toggleOverflow()">🗑 Clear All Data</button>
+      <button onclick="exportData();toggleOverflow()">⬆ Export History</button>
+      <button onclick="triggerImport();toggleOverflow()">⬇ Import History</button>
+      <button onclick="setupFileSync();toggleOverflow()">☁️ iCloud Sync</button>
+    </div>
   </div>
 </header>
 
 <div class="container">
 
   <!-- Workout Type Selection -->
-  <div class="section-label">Choose Workout Type</div>
+  <div class="section-label">Workout</div>
   <div class="workout-picker">
     <div class="workout-card" data-type="upper" onclick="selectType('upper')">
-      <div class="card-badge">✓ Selected</div>
       <span class="card-emoji">💪</span>
-      <div class="card-title">Upper Body</div>
-      <div class="card-desc">Chest, Back, Shoulders & Arms</div>
+      <div class="card-title">Upper</div>
     </div>
     <div class="workout-card" data-type="lower" onclick="selectType('lower')">
-      <div class="card-badge">✓ Selected</div>
       <span class="card-emoji">🦵</span>
-      <div class="card-title">Lower Body</div>
-      <div class="card-desc">Quads, Hamstrings, Glutes & Calves</div>
+      <div class="card-title">Lower</div>
     </div>
     <div class="workout-card" data-type="full" onclick="selectType('full')">
-      <div class="card-badge">✓ Selected</div>
       <span class="card-emoji">🔥</span>
-      <div class="card-title">Full Body</div>
-      <div class="card-desc">Complete Head-to-Toe Session</div>
+      <div class="card-title">Full</div>
     </div>
     <div class="workout-card" data-type="group_a" onclick="selectType('group_a')">
-      <div class="card-badge">✓ Selected</div>
       <span class="card-emoji">🅰️</span>
       <div class="card-title">Group A</div>
-      <div class="card-desc">Fixed Program · Push/Pull/Legs</div>
     </div>
     <div class="workout-card" data-type="group_b" onclick="selectType('group_b')">
-      <div class="card-badge">✓ Selected</div>
       <span class="card-emoji">🅱️</span>
       <div class="card-title">Group B</div>
-      <div class="card-desc">Fixed Program · Chest/Legs/Arms</div>
     </div>
     <div class="workout-card" data-type="group_c" onclick="selectType('group_c')">
-      <div class="card-badge">✓ Selected</div>
       <span class="card-emoji">⚡</span>
       <div class="card-title">Group C</div>
-      <div class="card-desc">HIIT · Calisthenics · Cardio</div>
     </div>
-  </div>
-
-  <div class="section-label" style="margin-top:20px">Cardio</div>
-  <div class="workout-picker">
-    <div class="workout-card" data-type="run" onclick="openCardioLog('run')">
-      <div class="card-badge">✓ Selected</div>
+    <div class="workout-card" data-type="cardio" onclick="openCardioTypePicker()">
       <span class="card-emoji">🏃</span>
-      <div class="card-title">Run</div>
-      <div class="card-desc">Distance · Pace · HR</div>
-    </div>
-    <div class="workout-card" data-type="cycle" onclick="openCardioLog('cycle')">
-      <div class="card-badge">✓ Selected</div>
-      <span class="card-emoji">🚴</span>
-      <div class="card-title">Cycle</div>
-      <div class="card-desc">Distance · Speed</div>
-    </div>
-    <div class="workout-card" data-type="hike" onclick="openCardioLog('hike')">
-      <div class="card-badge">✓ Selected</div>
-      <span class="card-emoji">🥾</span>
-      <div class="card-title">Hike</div>
-      <div class="card-desc">Distance · Elevation</div>
-    </div>
-    <div class="workout-card" data-type="swim" onclick="openCardioLog('swim')">
-      <div class="card-badge">✓ Selected</div>
-      <span class="card-emoji">🏊</span>
-      <div class="card-title">Swim</div>
-      <div class="card-desc">Distance · Pace</div>
+      <div class="card-title">Cardio</div>
     </div>
   </div>
 
   <!-- Mesocycle status -->
   <div id="cycle-status"></div>
 
-  <!-- Options -->
-  <div class="workout-meta">
+  <!-- Compact options bar -->
+  <div class="meta-compact">
+    <div class="meta-compact-group">
+      <div class="pill active" data-diff="beginner"      onclick="selectDiff('beginner')">Beg</div>
+      <div class="pill"        data-diff="intermediate"  onclick="selectDiff('intermediate')">Int</div>
+      <div class="pill"        data-diff="advanced"      onclick="selectDiff('advanced')">Adv</div>
+    </div>
+    <div class="meta-compact-sep"></div>
+    <div class="meta-compact-group">
+      <div class="pill active" data-goal="strength"    onclick="selectGoal('strength')">Strength</div>
+      <div class="pill"        data-goal="hypertrophy" onclick="selectGoal('hypertrophy')">Hypertrophy</div>
+      <div class="pill"        data-goal="endurance"   onclick="selectGoal('endurance')">Endurance</div>
+    </div>
+    <div class="meta-compact-sep"></div>
+    <div class="meta-compact-group">
+      <div class="pill active" data-unit="lb" onclick="selectUnit('lb')">lb</div>
+      <div class="pill"        data-unit="kg" onclick="selectUnit('kg')">kg</div>
+    </div>
+  </div>
+
+  <!-- Legacy hidden meta (keeps selectDiff/Goal/Unit pill selectors working) -->
+  <div class="workout-meta" style="display:none">
     <div class="meta-group">
       <label>Difficulty</label>
       <div class="pills">
@@ -970,15 +1010,23 @@
     </div>
   </div>
 
-  <!-- Training Load -->
+  <!-- Training Load (collapsible) -->
   <div class="load-section">
-    <div class="section-label">Training Load</div>
-    <div class="load-totals" id="load-totals"></div>
-    <div class="load-chart">
-      <div class="load-bars" id="load-bars"></div>
-      <div class="load-week-label" id="load-week-label"></div>
+    <div class="load-toggle-row" id="load-toggle-row" onclick="toggleLoadSection()">
+      <span>
+        <span class="load-headline">Training Load</span>
+        <span class="load-summary-text" id="load-summary-text"></span>
+      </span>
+      <span class="load-chevron" id="load-chevron">▼</span>
     </div>
-    <div class="load-type-breakdown" id="load-type-breakdown"></div>
+    <div id="load-collapsible" style="display:none;margin-top:12px">
+      <div class="load-totals" id="load-totals"></div>
+      <div class="load-chart">
+        <div class="load-bars" id="load-bars"></div>
+        <div class="load-week-label" id="load-week-label"></div>
+      </div>
+      <div class="load-type-breakdown" id="load-type-breakdown"></div>
+    </div>
   </div>
 
   <!-- Calendar -->
@@ -998,18 +1046,14 @@
     </div>
   </div>
 
-  <div class="data-io-row">
-    <button class="btn-io" onclick="exportData()">⬆ Export History</button>
-    <button class="btn-io" onclick="triggerImport()">⬇ Import History</button>
-    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
-  </div>
-
-  <div class="sync-row">
+  <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+  <!-- Sync status (compact, shown in overflow menu area) -->
+  <div class="sync-row" style="margin-top:8px">
     <div class="sync-status">
       <div class="sync-dot" id="sync-dot"></div>
       <span id="sync-label">Device only — no file sync</span>
     </div>
-    <button class="btn-io" id="sync-btn" onclick="setupFileSync()">☁️ Set up iCloud Sync</button>
+    <button class="btn-io" id="sync-btn" onclick="setupFileSync()" style="display:none">☁️ Sync</button>
   </div>
 
 </div>
@@ -1101,6 +1145,34 @@
         </select>
         <button class="btn-add-custom" onclick="addCustomExercise()">Add to Workout</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div id="cardio-type-modal" class="swap-modal" onclick="if(event.target===this)closeCardioTypePicker()">
+  <div class="cardio-type-sheet">
+    <h3>Choose Activity</h3>
+    <div class="cardio-type-grid">
+      <button class="cardio-type-btn" onclick="closeCardioTypePicker();openCardioLog('run')">
+        <span class="ct-emoji">🏃</span>
+        <span class="ct-label">Run</span>
+        <span class="ct-sub">Distance · Pace</span>
+      </button>
+      <button class="cardio-type-btn" onclick="closeCardioTypePicker();openCardioLog('cycle')">
+        <span class="ct-emoji">🚴</span>
+        <span class="ct-label">Cycle</span>
+        <span class="ct-sub">Distance · Speed</span>
+      </button>
+      <button class="cardio-type-btn" onclick="closeCardioTypePicker();openCardioLog('hike')">
+        <span class="ct-emoji">🥾</span>
+        <span class="ct-label">Hike</span>
+        <span class="ct-sub">Distance · Elevation</span>
+      </button>
+      <button class="cardio-type-btn" onclick="closeCardioTypePicker();openCardioLog('swim')">
+        <span class="ct-emoji">🏊</span>
+        <span class="ct-label">Swim</span>
+        <span class="ct-sub">Distance · Pace</span>
+      </button>
     </div>
   </div>
 </div>
@@ -2047,6 +2119,37 @@ function convertWeight(value, fromUnit, toUnit) {
   return isNaN(converted) ? value : String(Math.round(converted * 10) / 10);
 }
 
+// ─── Cardio Type Picker ───────────────────────────────────────────────────────
+
+function openCardioTypePicker() {
+  document.querySelectorAll('.workout-card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.workout-card[data-type="cardio"]')?.classList.add('active');
+  document.getElementById('cardio-type-modal').classList.add('open');
+}
+function closeCardioTypePicker() {
+  document.getElementById('cardio-type-modal').classList.remove('open');
+}
+
+// ─── Overflow Menu ────────────────────────────────────────────────────────────
+
+function toggleOverflow(e) {
+  const menu = document.getElementById('overflow-menu');
+  menu.classList.toggle('open');
+  if (e) e.stopPropagation();
+}
+document.addEventListener('click', () => {
+  document.getElementById('overflow-menu')?.classList.remove('open');
+});
+
+// ─── Load Section Toggle ──────────────────────────────────────────────────────
+
+let _loadExpanded = false;
+function toggleLoadSection() {
+  _loadExpanded = !_loadExpanded;
+  document.getElementById('load-collapsible').style.display = _loadExpanded ? 'block' : 'none';
+  document.getElementById('load-toggle-row').classList.toggle('open', _loadExpanded);
+}
+
 // ─── RPE / Bodyweight Session Rating ─────────────────────────────────────────
 
 let _rpeSession = null;
@@ -2302,6 +2405,13 @@ function renderLoadDashboard() {
     ? `<div class="load-total-sub" style="color:${diff >= 0 ? 'var(--green)' : 'var(--red)'}">
         ${diff >= 0 ? '↑' : '↓'}${Math.abs(diff)}% vs prev week
        </div>` : '';
+
+  // Update headline summary (always visible)
+  const summaryEl = document.getElementById('load-summary-text');
+  if (summaryEl) {
+    const diffSuffix = diff !== null ? ` · ${diff >= 0 ? '↑' : '↓'}${Math.abs(diff)}%` : '';
+    summaryEl.textContent = `${Math.round(lp7)} LP${diffSuffix}`;
+  }
 
   document.getElementById('load-totals').innerHTML = `
     <div class="load-total">
