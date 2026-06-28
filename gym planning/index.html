@@ -4165,6 +4165,24 @@ function endCycle() {
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 
+// Migrate cardio loadPoints to current formula (run once per browser, keyed by version)
+(function migrateCardioLP() {
+  const KEY = 'gymgen-cardio-lp-v2';
+  if (localStorage.getItem(KEY)) return;
+  const h = getHistory();
+  let changed = false;
+  h.forEach(sess => {
+    if (!isCardio(sess.type) || !sess.cardio) return;
+    const cached = sess.cardio.loadPoints;
+    delete sess.cardio.loadPoints;           // force recalc from raw fields
+    const fresh = calcLoadPoints(sess);
+    sess.cardio.loadPoints = fresh;
+    if (fresh !== cached) changed = true;
+  });
+  if (changed) saveHistory(h);
+  localStorage.setItem(KEY, '1');
+})();
+
 restoreSessionState();
 renderTimer();
 renderCalendar();
