@@ -2288,17 +2288,17 @@ function calcLoadPoints(session) {
       case 'run': {
         const miles = toMiles(dist, c.distUnit);
         const minPerMile = miles > 0 && durMin > 0 ? durMin / miles : 10;
-        return Math.round(miles * (12 / minPerMile) * 10) / 10;
+        return Math.round(miles * (12 / minPerMile) * 5 * 10) / 10;
       }
-      case 'cycle': return Math.round(toMiles(dist, c.distUnit) * 0.4 * 10) / 10;
+      case 'cycle': return Math.round(toMiles(dist, c.distUnit) * 2 * 10) / 10;
       case 'hike': {
         const miles = toMiles(dist, c.distUnit);
         const elevFt = c.elevation ? toFeet(parseFloat(c.elevation) || 0, c.elevUnit || 'ft') : 0;
-        return Math.round((miles * 0.6 + elevFt / 1500) * 10) / 10;
+        return Math.round((miles * 0.6 + elevFt / 1500) * 5 * 10) / 10;
       }
       case 'swim': {
         const meters = c.distUnit === 'm' ? dist : dist * 0.9144;
-        return Math.round(meters / 80 * 10) / 10;
+        return Math.round(meters / 16 * 10) / 10;
       }
       default: return 0;
     }
