@@ -374,6 +374,10 @@
   .load-bar.zone-rest { background: var(--surface2); height: 2px !important; opacity: 0.5; }
   .load-week-label { display: flex; justify-content: space-between; margin-top: 6px; padding: 0 2px; }
   .load-week-label span { font-size: 10px; color: var(--text3); font-weight: 600; }
+  .load-avg-row { display: flex; gap: 12px; align-items: center; margin-top: 8px; font-size: 12px; color: var(--text2); }
+  .load-avg-row strong { color: var(--accent); }
+  .load-trend-up   { color: var(--green); font-weight: 700; }
+  .load-trend-down { color: var(--red);   font-weight: 700; }
   .load-type-breakdown { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .load-type-chip { background: var(--surface); border-radius: 20px; padding: 5px 11px; font-size: 12px; font-weight: 600; color: var(--text2); }
 
@@ -1030,6 +1034,7 @@
         <div class="load-bars" id="load-bars"></div>
         <div class="load-week-label" id="load-week-label"></div>
       </div>
+      <div class="load-avg-row" id="load-avg-row"></div>
       <div class="load-type-breakdown" id="load-type-breakdown"></div>
     </div>
   </div>
@@ -2441,6 +2446,36 @@ function renderLoadDashboard() {
     byType[group] = (byType[group] || 0) + lp;
   });
   const typeLabels = { gym: '💪 Gym', run: '🏃 Run', cycle: '🚴 Cycle', hike: '🥾 Hike', swim: '🏊 Swim' };
+  // Avg LP/day (28-day current vs prior 28-day)
+  const activeDays28 = days.filter(d => d.lp > 0);
+  const avg28 = activeDays28.length ? lp28 / activeDays28.length : 0;
+  const prior28Days = [];
+  for (let i = 55; i >= 28; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    prior28Days.push({ date: d, lp: 0 });
+  }
+  h.forEach(sess => {
+    const sd = new Date(sess.date); sd.setHours(0, 0, 0, 0);
+    const idx = prior28Days.findIndex(d => d.date.getTime() === sd.getTime());
+    if (idx === -1) return;
+    prior28Days[idx].lp += sess.cardio?.loadPoints ?? calcLoadPoints(sess);
+  });
+  const activePrior = prior28Days.filter(d => d.lp > 0);
+  const avgPrior28 = activePrior.length ? prior28Days.reduce((s, d) => s + d.lp, 0) / activePrior.length : 0;
+  const avgRowEl = document.getElementById('load-avg-row');
+  if (avgRowEl) {
+    if (avg28 > 0) {
+      let trendHtml = '';
+      if (avgPrior28 > 0) {
+        const up = avg28 >= avgPrior28;
+        trendHtml = `<span class="${up ? 'load-trend-up' : 'load-trend-down'}">${up ? '↑' : '↓'} vs prev ${Math.round(avgPrior28)} LP</span>`;
+      }
+      avgRowEl.innerHTML = `<span>avg <strong>${Math.round(avg28)} LP</strong>/day</span>${trendHtml}`;
+    } else {
+      avgRowEl.innerHTML = '';
+    }
+  }
+
   document.getElementById('load-type-breakdown').innerHTML =
     Object.entries(byType)
       .filter(([, v]) => v > 0)
@@ -3332,6 +3367,46 @@ function selectTrendRange(range) {
   renderTrends();
 }
 
+function _avgLP(slots) {
+  const active = slots.filter(s => s.lp > 0);
+  if (!active.length) return 0;
+  return active.reduce((s, x) => s + x.lp, 0) / active.length;
+}
+
+function _prevPeriodSlots(range) {
+  const currentStart = _rangeStart(range);
+  if (!currentStart) return [];
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const durMs = today - currentStart;
+  const prevEnd = new Date(currentStart); prevEnd.setDate(prevEnd.getDate() - 1);
+  const prevStart = new Date(prevEnd.getTime() - durMs);
+  const isWeekly = (range === '3M' || range === '6M' || range === 'all');
+  const h = getHistory();
+  const map = {};
+  h.forEach(sess => {
+    const d = new Date(sess.date); d.setHours(0, 0, 0, 0);
+    if (d < prevStart || d > prevEnd) return;
+    const k = dateKey(d);
+    map[k] = (map[k] || 0) + (sess.cardio?.loadPoints ?? calcLoadPoints(sess));
+  });
+  const slots = [];
+  if (!isWeekly) {
+    for (let d = new Date(prevStart); d <= prevEnd; d.setDate(d.getDate() + 1))
+      slots.push({ lp: map[dateKey(new Date(d))] || 0 });
+  } else {
+    const wStart = new Date(prevStart);
+    while (wStart <= prevEnd) {
+      const wEnd = new Date(wStart); wEnd.setDate(wStart.getDate() + 6);
+      let lp = 0;
+      for (let d = new Date(wStart); d <= wEnd && d <= prevEnd; d.setDate(d.getDate() + 1))
+        lp += map[dateKey(new Date(d))] || 0;
+      slots.push({ lp });
+      wStart.setDate(wStart.getDate() + 7);
+    }
+  }
+  return slots;
+}
+
 function _rangeStart(range) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   if (range === '4W') { const d = new Date(today); d.setDate(d.getDate() - 28);  return d; }
@@ -3456,6 +3531,21 @@ function buildLoadTrendSVG(slots, range) {
       : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     svg += `<text x="${bx.toFixed(1)}" y="${H-6}" font-size="10" fill="${dimC}" text-anchor="middle" font-family="${fam}">${lbl}</text>`;
   });
+
+  // Average overlay lines
+  const currentAvg = _avgLP(slots);
+  const prevAvg    = _avgLP(_prevPeriodSlots(range));
+  if (currentAvg > 0) {
+    const y = yP(currentAvg).toFixed(1);
+    const trend = prevAvg > 0 ? (currentAvg >= prevAvg ? ' ↑' : ' ↓') : '';
+    svg += `<line x1="${ML}" x2="${W-MR}" y1="${y}" y2="${y}" stroke="#ff9f0a" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.85"/>`;
+    svg += `<text x="${W-MR-2}" y="${+y-4}" text-anchor="end" font-size="9" font-weight="700" fill="#ff9f0a" opacity="0.9" font-family="${fam}">avg ${Math.round(currentAvg)}${trend}</text>`;
+  }
+  if (prevAvg > 0) {
+    const y = yP(prevAvg).toFixed(1);
+    svg += `<line x1="${ML}" x2="${W-MR}" y1="${y}" y2="${y}" stroke="rgba(235,235,245,0.35)" stroke-width="1" stroke-dasharray="3 3"/>`;
+    svg += `<text x="${W-MR-2}" y="${+y-4}" text-anchor="end" font-size="9" fill="rgba(235,235,245,0.45)" font-family="${fam}">prev ${Math.round(prevAvg)}</text>`;
+  }
 
   // Type breakdown legend under chart
   const typeLP = {};
