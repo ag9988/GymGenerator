@@ -3532,15 +3532,31 @@ function buildLoadTrendSVG(slots, range) {
     svg += `<text x="${bx.toFixed(1)}" y="${H-6}" font-size="10" fill="${dimC}" text-anchor="middle" font-family="${fam}">${lbl}</text>`;
   });
 
-  // Average overlay lines
-  const currentAvg = _avgLP(slots);
-  const prevAvg    = _avgLP(_prevPeriodSlots(range));
-  if (currentAvg > 0) {
-    const y = yP(currentAvg).toFixed(1);
-    const trend = prevAvg > 0 ? (currentAvg >= prevAvg ? ' ↑' : ' ↓') : '';
-    svg += `<line x1="${ML}" x2="${W-MR}" y1="${y}" y2="${y}" stroke="#ff9f0a" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.85"/>`;
-    svg += `<text x="${W-MR-2}" y="${+y-4}" text-anchor="end" font-size="9" font-weight="700" fill="#ff9f0a" opacity="0.9" font-family="${fam}">avg ${Math.round(currentAvg)}${trend}</text>`;
-  }
+  // Rolling average polyline (7-day window for daily, 3-slot for weekly)
+  const rollWin = useDaily ? 7 : 3;
+  const rollPts = slots.map((_, i) => {
+    const window = slots.slice(Math.max(0, i - rollWin + 1), i + 1);
+    const active = window.filter(s => s.lp > 0);
+    const avg = active.length ? active.reduce((s, x) => s + x.lp, 0) / active.length : 0;
+    const cx = ML + i * (barW + gap) + barW / 2;
+    return avg > 0 ? `${cx.toFixed(1)},${yP(avg).toFixed(1)}` : null;
+  });
+  // Build path segments (skip gaps where avg is 0)
+  let rollPath = '';
+  let seg = [];
+  rollPts.forEach((pt, i) => {
+    if (pt) {
+      seg.push(pt);
+    } else {
+      if (seg.length > 1) rollPath += `<polyline points="${seg.join(' ')}" fill="none" stroke="#ff9f0a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>`;
+      seg = [];
+    }
+  });
+  if (seg.length > 1) rollPath += `<polyline points="${seg.join(' ')}" fill="none" stroke="#ff9f0a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>`;
+  svg += rollPath;
+
+  // Previous period avg — single dashed horizontal reference line
+  const prevAvg = _avgLP(_prevPeriodSlots(range));
   if (prevAvg > 0) {
     const y = yP(prevAvg).toFixed(1);
     svg += `<line x1="${ML}" x2="${W-MR}" y1="${y}" y2="${y}" stroke="rgba(235,235,245,0.35)" stroke-width="1" stroke-dasharray="3 3"/>`;
