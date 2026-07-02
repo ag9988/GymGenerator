@@ -128,12 +128,27 @@
     text-align: center; position: relative; overflow: hidden;
   }
   .workout-card.cardio-card {
-    grid-column: 1 / -1;
+    grid-column: span 2;
     display: flex; align-items: center; justify-content: center; gap: 10px;
     padding: 12px 16px;
   }
   .workout-card.cardio-card .card-emoji { margin-bottom: 0; width: 22px; height: 22px; }
   .workout-card.cardio-card .card-title { font-size: 14px; }
+  /* Free session timer UI */
+  .free-session-card {
+    background: var(--surface); border-radius: 20px; padding: 32px 20px;
+    text-align: center; margin-bottom: 20px;
+  }
+  .free-timer-display {
+    font-size: 56px; font-weight: 700; letter-spacing: -2px;
+    color: var(--accent); font-variant-numeric: tabular-nums; margin-bottom: 8px;
+  }
+  .free-timer-label { font-size: 13px; color: var(--text3); margin-bottom: 32px; text-transform: uppercase; letter-spacing: 0.6px; }
+  .btn-end-free {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--red); color: #fff; border: none; border-radius: 14px;
+    padding: 14px 32px; font-size: 16px; font-weight: 700; cursor: pointer;
+  }
   .workout-card::before {
     content: ''; position: absolute; inset: 0;
     background: var(--accent); opacity: 0; transition: opacity 0.2s;
@@ -930,6 +945,10 @@
       <span class="card-emoji"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 2L5 13.5h8L11 22l8-12.5h-8L13.5 2z"/></svg></span>
       <div class="card-title">Group C</div>
     </div>
+    <div class="workout-card" data-type="free" onclick="selectType('free')">
+      <span class="card-emoji"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 3h5M12 3v2"/></svg></span>
+      <div class="card-title">Free</div>
+    </div>
     <div class="workout-card cardio-card" data-type="cardio" onclick="openCardioTypePicker()">
       <span class="card-emoji"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="15.5" cy="4" r="2"/><path d="M15 6L12 12M13.5 8.5L17.5 6.5M13.5 8.5L10 11M12 12L9 17M12 12L16 16M9 17L7 21M16 16L14 21"/></svg></span>
       <div class="card-title">Cardio</div>
@@ -1235,6 +1254,44 @@
   </div>
 </div>
 
+<div id="free-end-modal" class="swap-modal" onclick="if(event.target===this)closeFreeEnd()">
+  <div class="swap-modal-inner">
+    <div class="swap-modal-header">
+      <h3>How'd it go?</h3>
+      <button class="close-btn" onclick="closeFreeEnd()">×</button>
+    </div>
+    <div class="cardio-field">
+      <label>Duration</label>
+      <div id="free-duration-display" style="font-size:22px;font-weight:700;color:var(--accent);padding:4px 0 0">—</div>
+    </div>
+    <div class="cardio-field">
+      <label>RPE — Perceived Effort</label>
+      <div class="rpe-grid" id="free-rpe-grid">
+        <button class="rpe-btn" data-rpe="1" onclick="selectFreeRPE(1)">1<span>Very Easy</span></button>
+        <button class="rpe-btn" data-rpe="2" onclick="selectFreeRPE(2)">2<span></span></button>
+        <button class="rpe-btn" data-rpe="3" onclick="selectFreeRPE(3)">3<span>Easy</span></button>
+        <button class="rpe-btn" data-rpe="4" onclick="selectFreeRPE(4)">4<span></span></button>
+        <button class="rpe-btn" data-rpe="5" onclick="selectFreeRPE(5)">5<span>Moderate</span></button>
+        <button class="rpe-btn" data-rpe="6" onclick="selectFreeRPE(6)">6<span></span></button>
+        <button class="rpe-btn" data-rpe="7" onclick="selectFreeRPE(7)">7<span>Hard</span></button>
+        <button class="rpe-btn" data-rpe="8" onclick="selectFreeRPE(8)">8<span></span></button>
+        <button class="rpe-btn" data-rpe="9" onclick="selectFreeRPE(9)">9<span>Very Hard</span></button>
+        <button class="rpe-btn" data-rpe="10" onclick="selectFreeRPE(10)">10<span>Max</span></button>
+      </div>
+    </div>
+    <div class="cardio-field">
+      <label>Avg Heart Rate <span style="color:var(--text3)">(optional)</span></label>
+      <input class="cardio-input" id="free-hr" type="number" min="40" max="220" placeholder="bpm" style="width:120px">
+    </div>
+    <div class="cardio-field">
+      <label>Notes <span style="color:var(--text3)">(optional)</span></label>
+      <textarea class="cardio-input" id="free-notes" rows="3" placeholder="How did it feel?" style="width:100%;box-sizing:border-box;resize:none;font-family:inherit;font-size:15px;line-height:1.4"></textarea>
+    </div>
+    <div class="rpe-preview" id="free-lp-preview"></div>
+    <button class="btn-add-custom" onclick="saveFreeSession()">Save Session</button>
+  </div>
+</div>
+
 <div id="cardio-log-modal" class="swap-modal" onclick="if(event.target===this)closeCardioLog()">
   <div class="swap-modal-inner">
     <div class="swap-modal-header">
@@ -1494,6 +1551,7 @@ const ICONS = {
   cycle:    _svg('<circle cx="6" cy="17" r="3.5" fill="none"/><circle cx="18" cy="17" r="3.5" fill="none"/><path d="M9.5 17h5l2-5H9L8 9H6M12 12l2-5h2.5l2 3.5"/>'),
   hike:     _svg('<path d="M3 21L9 6l4 5.5L17 3l4 18M3 21h18"/>'),
   swim:     _svg('<path d="M2 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0M2 17c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/><circle cx="17" cy="6" r="2" fill="none"/><path d="M14.5 8l-2.5 4"/>'),
+  free:     _svg('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 3h5M12 3v2"/>'),
   // UI actions
   trophy:   _svg('<path d="M8 21h8M12 17v4M6 5h12v6a6 6 0 01-12 0V5z"/><path d="M6 8H3.5a2.5 2.5 0 000 5H6M18 8h2.5a2.5 2.5 0 010 5H18"/>'),
   trends:   _svg('<polyline points="3 20 8 13 12 16 17 9 21 13"/><polyline points="17 9 21 9 21 13"/>'),
@@ -1523,6 +1581,7 @@ const TYPE_NAMES = {
   cycle:   { title: 'Cycle',              emoji: '🚴' },
   hike:    { title: 'Hike',               emoji: '🥾' },
   swim:    { title: 'Swim',               emoji: '🏊' },
+  free:    { title: 'Free Workout',       emoji: '⏱' },
 };
 
 const CARDIO_TYPES = new Set(['run', 'cycle', 'hike', 'swim']);
@@ -1633,6 +1692,11 @@ function selectUnit(unit) {
 
 function generateWorkout(shuffled = false) {
   if (!selectedType) { toast('Pick a workout type first!'); return; }
+
+  if (selectedType === 'free') {
+    startFreeSession();
+    return;
+  }
 
   if (selectedType === 'group_c') {
     const chosen = [...EXERCISES.group_c];
@@ -2215,6 +2279,12 @@ function toggleLoadSection() {
 let _rpeSession = null;
 let _selectedRPE = 7;
 
+// Free workout state
+let _freeSessionStart = null;
+let _freeTimer = null;
+let _freeDurationMin = 0;
+let _selectedFreeRPE = 7;
+
 function openRPE(session) {
   _rpeSession = session;
   _selectedRPE = 7;
@@ -2266,6 +2336,101 @@ function _commitSession(session) {
   renderCalendar();
   renderLoadDashboard();
   openSummary(session);
+}
+
+// ─── Free Workout ─────────────────────────────────────────────────────────────
+
+function startFreeSession() {
+  currentPlan = [];
+  _freeSessionStart = Date.now();
+  renderFreeSession();
+}
+
+function renderFreeSession() {
+  const plan = document.getElementById('workout-plan');
+  const list = document.getElementById('exercises-list');
+  const info = TYPE_NAMES['free'];
+  document.getElementById('plan-title').innerHTML = `<span class="plan-title-icon">${typeIcon('free')}</span>${info.title}`;
+  document.getElementById('plan-subtitle').textContent = 'Session in progress…';
+  document.getElementById('stat-exercises').textContent = '—';
+  document.getElementById('stat-sets').textContent = '—';
+  list.innerHTML = `
+    <div class="free-session-card">
+      <div class="free-timer-display" id="free-elapsed">0:00:00</div>
+      <div class="free-timer-label">Elapsed</div>
+      <button class="btn-end-free" onclick="endFreeSession()">End Session</button>
+    </div>`;
+  plan.style.display = 'block';
+  document.querySelector('.btn-finish').style.display = 'none';
+  clearInterval(_freeTimer);
+  _freeTimer = setInterval(_tickFreeTimer, 1000);
+}
+
+function _tickFreeTimer() {
+  if (!_freeSessionStart) return;
+  const elapsed = Math.floor((Date.now() - _freeSessionStart) / 1000);
+  const h = Math.floor(elapsed / 3600);
+  const m = Math.floor((elapsed % 3600) / 60);
+  const s = elapsed % 60;
+  const el = document.getElementById('free-elapsed');
+  if (el) el.textContent = `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function endFreeSession() {
+  clearInterval(_freeTimer);
+  _freeTimer = null;
+  _freeDurationMin = _freeSessionStart ? Math.max(1, Math.round((Date.now() - _freeSessionStart) / 60000)) : 1;
+
+  // Show duration in modal
+  const h = Math.floor(_freeDurationMin / 60);
+  const m = _freeDurationMin % 60;
+  document.getElementById('free-duration-display').textContent = h > 0 ? `${h}h ${m}m` : `${m} min`;
+
+  // Reset RPE selection to 7
+  _selectedFreeRPE = 7;
+  document.querySelectorAll('#free-rpe-grid .rpe-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.rpe) === 7);
+  });
+  _updateFreeLPPreview();
+
+  document.getElementById('free-hr').value = '';
+  document.getElementById('free-notes').value = '';
+  document.getElementById('free-end-modal').classList.add('open');
+}
+
+function closeFreeEnd() {
+  document.getElementById('free-end-modal').classList.remove('open');
+}
+
+function selectFreeRPE(val) {
+  _selectedFreeRPE = val;
+  document.querySelectorAll('#free-rpe-grid .rpe-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.rpe) === val);
+  });
+  _updateFreeLPPreview();
+}
+
+function _updateFreeLPPreview() {
+  const lp = Math.round(_freeDurationMin * _selectedFreeRPE / 4);
+  document.getElementById('free-lp-preview').textContent = `Training Load: ${lp} LP`;
+}
+
+function saveFreeSession() {
+  const hr = parseInt(document.getElementById('free-hr').value) || null;
+  const notes = document.getElementById('free-notes').value.trim() || null;
+  const lp = Math.round(_freeDurationMin * _selectedFreeRPE / 4);
+  const session = {
+    id: Date.now(),
+    date: new Date().toLocaleString(),
+    type: 'free',
+    sessionLP: lp,
+    free: { durationMin: _freeDurationMin, rpe: _selectedFreeRPE, avgHR: hr, notes },
+    exercises: [],
+  };
+  document.getElementById('free-end-modal').classList.remove('open');
+  document.querySelector('.btn-finish').style.display = '';
+  _freeSessionStart = null;
+  _commitSession(session);
 }
 
 // ─── Cardio Logging ───────────────────────────────────────────────────────────
@@ -2544,6 +2709,23 @@ function openSummary(session) {
   const typeInfo = TYPE_NAMES[session.type] || { title: session.type };
   document.getElementById('summary-title').innerHTML = `<span class="plan-title-icon">${typeIcon(session.type)}</span>${typeInfo.title}`;
   document.getElementById('summary-date').textContent  = session.date;
+
+  if (session.type === 'free' && session.free) {
+    const f = session.free;
+    const dh = Math.floor(f.durationMin / 60), dm = f.durationMin % 60;
+    const durStr = dh > 0 ? `${dh}h ${dm}m` : `${dm} min`;
+    document.getElementById('summary-stats').innerHTML = `
+      <div class="summary-stat"><div class="summary-stat-value">${durStr}</div><div class="summary-stat-label">Duration</div></div>
+      <div class="summary-stat"><div class="summary-stat-value">${f.rpe}/10</div><div class="summary-stat-label">RPE</div></div>
+      <div class="summary-stat"><div class="summary-stat-value">${session.sessionLP}</div><div class="summary-stat-label">LP</div></div>
+    `;
+    document.getElementById('summary-prs').innerHTML = f.avgHR
+      ? `<div class="summary-pr-item" style="color:var(--text2)">Avg HR: <strong style="color:#fff">${f.avgHR} bpm</strong></div>` : '';
+    document.getElementById('summary-exercises').innerHTML = f.notes
+      ? `<div style="background:var(--surface2);border-radius:12px;padding:14px;font-size:14px;color:var(--text2);line-height:1.5">${f.notes}</div>` : '';
+    document.getElementById('summary-modal').classList.add('open');
+    return;
+  }
 
   if (isCardio(session.type)) {
     _openCardioSummary(session, typeInfo);
@@ -2925,7 +3107,15 @@ function openHistory() {
       const typeInfo = TYPE_NAMES[sess.type] || { title: sess.type };
       const diffLine = sess.diff ? ` · ${cap(sess.diff)}` : '';
       let body2 = '';
-      if (isCardio(sess.type) && sess.cardio) {
+      if (sess.type === 'free' && sess.free) {
+        const f = sess.free;
+        const dh = Math.floor(f.durationMin / 60), dm = f.durationMin % 60;
+        const durStr = dh > 0 ? `${dh}h ${dm}m` : `${dm} min`;
+        body2 = `<div class="history-exercise"><strong>${durStr}</strong> · RPE ${f.rpe}
+          <span style="color:var(--accent);margin-left:8px">${sess.sessionLP} LP</span></div>`;
+        if (f.avgHR)  body2 += `<div class="history-set">Avg HR: ${f.avgHR} bpm</div>`;
+        if (f.notes)  body2 += `<div class="history-set">${f.notes}</div>`;
+      } else if (isCardio(sess.type) && sess.cardio) {
         const c = sess.cardio;
         const durMin = (c.durationH||0)*60 + (c.durationM||0) + (c.durationS||0)/60;
         const h2 = c.durationH||0, m2 = c.durationM||0, s2 = c.durationS||0;
@@ -3887,7 +4077,20 @@ function openDayDetail(d, sessions) {
         <span style="font-weight:700;font-size:15px;">${TYPE_NAMES[sess.type]?.title || sess.type}</span>
         <span style="font-size:12px;color:var(--text2);margin-left:auto;">${cap(sess.diff)} · ${cap(sess.goal)}</span>
       </div>
-      ${sess.exercises.map(ex => `
+      ${sess.type === 'free' && sess.free ? (() => {
+        const f = sess.free;
+        const dh = Math.floor(f.durationMin / 60), dm = f.durationMin % 60;
+        const durStr = dh > 0 ? `${dh}h ${dm}m` : `${dm} min`;
+        return `<div style="background:var(--surface2);border-radius:12px;padding:12px 14px;margin-bottom:8px;">
+          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:${f.avgHR||f.notes ? 10 : 0}px;">
+            <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Duration</div><div style="font-weight:700;color:var(--accent)">${durStr}</div></div>
+            <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">RPE</div><div style="font-weight:700">${f.rpe}/10</div></div>
+            <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Load</div><div style="font-weight:700;color:var(--accent)">${sess.sessionLP} LP</div></div>
+            ${f.avgHR ? `<div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Avg HR</div><div style="font-weight:700">${f.avgHR} bpm</div></div>` : ''}
+          </div>
+          ${f.notes ? `<div style="font-size:13px;color:var(--text2);border-top:1px solid var(--sep);padding-top:8px;">${f.notes}</div>` : ''}
+        </div>`;
+      })() : sess.exercises.map(ex => `
         <div style="background:var(--surface2);border-radius:12px;padding:12px 14px;margin-bottom:8px;">
           <div style="font-weight:600;font-size:14px;margin-bottom:8px;">${ex.name}</div>
           <div style="display:flex;flex-wrap:wrap;gap:6px;">
