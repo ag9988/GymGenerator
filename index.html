@@ -133,13 +133,53 @@
     transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s, background 0.2s;
     text-align: center; position: relative; overflow: hidden;
   }
-  .workout-card.cardio-card, .workout-card.free-card {
-    grid-column: 1 / -1;
-    display: flex; align-items: center; justify-content: center; gap: 12px;
-    padding: 14px 20px;
+  /* Breathwork UI */
+  .breath-session-card {
+    background: var(--surface); border-radius: 20px; padding: 28px 20px;
+    text-align: center; margin-bottom: 20px;
   }
-  .workout-card.cardio-card .card-emoji, .workout-card.free-card .card-emoji { margin-bottom: 0; width: 24px; height: 24px; }
-  .workout-card.cardio-card .card-title, .workout-card.free-card .card-title { font-size: 15px; }
+  .breath-pattern-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 28px;
+  }
+  .breath-pattern-card {
+    background: var(--surface2); border-radius: 14px; padding: 14px 8px;
+    cursor: pointer; border: 1.5px solid transparent;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .breath-pattern-card.active {
+    border-color: var(--accent); background: rgba(255,45,85,0.08);
+  }
+  .breath-pattern-name { font-size: 12px; font-weight: 700; margin-bottom: 4px; color: #fff; }
+  .breath-pattern-desc { font-size: 10px; color: var(--text2); line-height: 1.4; }
+  .breath-circle-wrap {
+    display: flex; align-items: center; justify-content: center;
+    height: 220px; margin-bottom: 16px;
+  }
+  .breath-circle {
+    width: 110px; height: 110px; border-radius: 50%;
+    background: rgba(255,45,85,0.12);
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 24px rgba(255,45,85,0.2);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transform: scale(1);
+  }
+  .breath-phase-label {
+    font-size: 13px; font-weight: 700; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+  }
+  .breath-countdown {
+    font-size: 32px; font-weight: 700; color: #fff;
+    font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .breath-round-label {
+    font-size: 12px; color: var(--text3); margin-bottom: 24px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .breath-start-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--accent); color: #fff; border: none; border-radius: 14px;
+    padding: 14px 36px; font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 12px;
+  }
   /* Free session timer UI */
   .free-session-card {
     background: var(--surface); border-radius: 20px; padding: 32px 20px;
@@ -958,11 +998,15 @@
       <div class="card-title">Group C</div>
     </div>
     <div class="picker-section-label">Other</div>
-    <div class="workout-card free-card" data-type="free" onclick="selectType('free')">
+    <div class="workout-card" data-type="free" onclick="selectType('free')">
       <span class="card-emoji"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 3h5M12 3v2"/></svg></span>
       <div class="card-title">Free</div>
     </div>
-    <div class="workout-card cardio-card" data-type="cardio" onclick="openCardioTypePicker()">
+    <div class="workout-card" data-type="breathwork" onclick="selectType('breathwork')">
+      <span class="card-emoji"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="11"/></svg></span>
+      <div class="card-title">Breathe</div>
+    </div>
+    <div class="workout-card" data-type="cardio" onclick="openCardioTypePicker()">
       <span class="card-emoji"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="15.5" cy="4" r="2"/><path d="M15 6L12 12M13.5 8.5L17.5 6.5M13.5 8.5L10 11M12 12L9 17M12 12L16 16M9 17L7 21M16 16L14 21"/></svg></span>
       <div class="card-title">Cardio</div>
     </div>
@@ -1564,7 +1608,8 @@ const ICONS = {
   cycle:    _svg('<circle cx="6" cy="17" r="3.5" fill="none"/><circle cx="18" cy="17" r="3.5" fill="none"/><path d="M9.5 17h5l2-5H9L8 9H6M12 12l2-5h2.5l2 3.5"/>'),
   hike:     _svg('<path d="M3 21L9 6l4 5.5L17 3l4 18M3 21h18"/>'),
   swim:     _svg('<path d="M2 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0M2 17c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/><circle cx="17" cy="6" r="2" fill="none"/><path d="M14.5 8l-2.5 4"/>'),
-  free:     _svg('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 3h5M12 3v2"/>'),
+  free:       _svg('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 3h5M12 3v2"/>'),
+  breathwork: _svg('<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="11"/>'),
   // UI actions
   trophy:   _svg('<path d="M8 21h8M12 17v4M6 5h12v6a6 6 0 01-12 0V5z"/><path d="M6 8H3.5a2.5 2.5 0 000 5H6M18 8h2.5a2.5 2.5 0 010 5H18"/>'),
   trends:   _svg('<polyline points="3 20 8 13 12 16 17 9 21 13"/><polyline points="17 9 21 9 21 13"/>'),
@@ -1594,7 +1639,8 @@ const TYPE_NAMES = {
   cycle:   { title: 'Cycle',              emoji: '🚴' },
   hike:    { title: 'Hike',               emoji: '🥾' },
   swim:    { title: 'Swim',               emoji: '🏊' },
-  free:    { title: 'Free Workout',       emoji: '⏱' },
+  free:       { title: 'Free Workout',  emoji: '⏱' },
+  breathwork: { title: 'Breathwork',    emoji: '🫁' },
 };
 
 const CARDIO_TYPES = new Set(['run', 'cycle', 'hike', 'swim']);
@@ -1708,6 +1754,11 @@ function generateWorkout(shuffled = false) {
 
   if (selectedType === 'free') {
     startFreeSession();
+    return;
+  }
+
+  if (selectedType === 'breathwork') {
+    startBreathworkSession();
     return;
   }
 
@@ -2292,6 +2343,50 @@ function toggleLoadSection() {
 let _rpeSession = null;
 let _selectedRPE = 7;
 
+// Breathwork patterns
+const BREATHWORK_PATTERNS = {
+  box: {
+    name: 'Box Breathing',
+    desc: '4s · 4s · 4s · 4s',
+    detail: 'Navy SEAL stress control',
+    phases: [
+      { label: 'Inhale',  duration: 4, toScale: 1.7 },
+      { label: 'Hold',    duration: 4, toScale: 1.7 },
+      { label: 'Exhale',  duration: 4, toScale: 1.0 },
+      { label: 'Hold',    duration: 4, toScale: 1.0 },
+    ],
+  },
+  '478': {
+    name: '4-7-8',
+    desc: '4s · 7s · 8s',
+    detail: 'Sleep & anxiety relief',
+    phases: [
+      { label: 'Inhale',  duration: 4, toScale: 1.7 },
+      { label: 'Hold',    duration: 7, toScale: 1.7 },
+      { label: 'Exhale',  duration: 8, toScale: 1.0 },
+    ],
+  },
+  sigh: {
+    name: 'Physio Sigh',
+    desc: '5s · 2s · 7s',
+    detail: 'Fastest stress relief',
+    phases: [
+      { label: 'Inhale',       duration: 5, toScale: 1.7 },
+      { label: 'Hold',         duration: 2, toScale: 1.7 },
+      { label: 'Long Exhale',  duration: 7, toScale: 1.0 },
+    ],
+  },
+};
+
+// Breathwork state
+let _breathPattern = 'box';
+let _breathPhaseIdx = 0;
+let _breathRound = 0;
+let _breathSessionStart = null;
+let _breathPhaseTimer = null;
+let _breathCountdownTimer = null;
+let _breathRunning = false;
+
 // Free workout state
 let _freeSessionStart = null;
 let _freeTimer = null;
@@ -2349,6 +2444,122 @@ function _commitSession(session) {
   renderCalendar();
   renderLoadDashboard();
   openSummary(session);
+}
+
+// ─── Breathwork ───────────────────────────────────────────────────────────────
+
+function startBreathworkSession() {
+  currentPlan = [];
+  _breathRunning = false;
+  _breathPhaseIdx = 0;
+  _breathRound = 0;
+  _breathSessionStart = Date.now();
+  _breathPattern = 'box';
+
+  const plan = document.getElementById('workout-plan');
+  const list = document.getElementById('exercises-list');
+  document.getElementById('plan-title').innerHTML = `<span class="plan-title-icon">${typeIcon('breathwork')}</span>Breathwork`;
+  document.getElementById('plan-subtitle').textContent = 'Choose a technique';
+  document.getElementById('stat-exercises').textContent = '—';
+  document.getElementById('stat-sets').textContent = '—';
+  document.querySelector('.btn-finish').style.display = 'none';
+  plan.style.display = 'block';
+  _renderBreathPicker(list);
+}
+
+function _renderBreathPicker(list) {
+  const patternCards = Object.entries(BREATHWORK_PATTERNS).map(([key, p]) => `
+    <div class="breath-pattern-card ${key === _breathPattern ? 'active' : ''}" onclick="_selectBreathPattern('${key}')">
+      <div class="breath-pattern-name">${p.name}</div>
+      <div class="breath-pattern-desc">${p.desc}<br><span style="color:var(--text3);font-size:9px">${p.detail}</span></div>
+    </div>`).join('');
+
+  list.innerHTML = `
+    <div class="breath-session-card">
+      <div class="breath-pattern-grid">${patternCards}</div>
+      <div class="breath-circle-wrap">
+        <div class="breath-circle" id="breath-circle">
+          <div class="breath-phase-label" id="breath-phase-label">Ready</div>
+          <div class="breath-countdown" id="breath-countdown">—</div>
+        </div>
+      </div>
+      <div class="breath-round-label" id="breath-round-label">Select a technique above</div>
+      <button class="breath-start-btn" onclick="_startBreathAnimation()">Begin</button>
+      <button class="btn-end-free" onclick="_endBreathworkSession()" style="margin-top:8px">End Session</button>
+    </div>`;
+}
+
+function _selectBreathPattern(key) {
+  if (_breathRunning) return;
+  _breathPattern = key;
+  document.querySelectorAll('.breath-pattern-card').forEach(c =>
+    c.classList.toggle('active', c.getAttribute('onclick').includes(`'${key}'`)));
+}
+
+function _startBreathAnimation() {
+  if (_breathRunning) return;
+  _breathRunning = true;
+  _breathPhaseIdx = 0;
+  _breathRound = 1;
+  document.querySelector('.breath-start-btn').style.display = 'none';
+  _runBreathPhase();
+}
+
+function _runBreathPhase() {
+  const pattern = BREATHWORK_PATTERNS[_breathPattern];
+  const phase = pattern.phases[_breathPhaseIdx % pattern.phases.length];
+  const circle = document.getElementById('breath-circle');
+  const phaseLabel = document.getElementById('breath-phase-label');
+  const countdown = document.getElementById('breath-countdown');
+  const roundLabel = document.getElementById('breath-round-label');
+  if (!circle) return;
+
+  phaseLabel.textContent = phase.label;
+  roundLabel.textContent = `Round ${_breathRound}`;
+
+  // Animate circle
+  circle.style.transition = `transform ${phase.duration}s ${phase.toScale > 1 ? 'ease-in' : 'ease-out'}`;
+  circle.style.transform = `scale(${phase.toScale})`;
+
+  // Countdown
+  let remaining = phase.duration;
+  countdown.textContent = remaining;
+  clearInterval(_breathCountdownTimer);
+  _breathCountdownTimer = setInterval(() => {
+    remaining--;
+    if (remaining > 0) {
+      countdown.textContent = remaining;
+    }
+  }, 1000);
+
+  // Advance phase after duration
+  clearTimeout(_breathPhaseTimer);
+  _breathPhaseTimer = setTimeout(() => {
+    if (!_breathRunning) return;
+    const nextIdx = _breathPhaseIdx + 1;
+    if (nextIdx % pattern.phases.length === 0) _breathRound++;
+    _breathPhaseIdx = nextIdx;
+    _runBreathPhase();
+  }, phase.duration * 1000);
+}
+
+function _endBreathworkSession() {
+  _breathRunning = false;
+  clearTimeout(_breathPhaseTimer);
+  clearInterval(_breathCountdownTimer);
+
+  const durationMin = _breathSessionStart ? Math.max(1, Math.round((Date.now() - _breathSessionStart) / 60000)) : 1;
+  const session = {
+    id: Date.now(),
+    date: new Date().toLocaleString(),
+    type: 'breathwork',
+    sessionLP: 0,
+    free: { durationMin, pattern: _breathPattern, rounds: _breathRound },
+    exercises: [],
+  };
+  document.querySelector('.btn-finish').style.display = '';
+  _breathSessionStart = null;
+  _commitSession(session);
 }
 
 // ─── Free Workout ─────────────────────────────────────────────────────────────
@@ -2722,6 +2933,22 @@ function openSummary(session) {
   const typeInfo = TYPE_NAMES[session.type] || { title: session.type };
   document.getElementById('summary-title').innerHTML = `<span class="plan-title-icon">${typeIcon(session.type)}</span>${typeInfo.title}`;
   document.getElementById('summary-date').textContent  = session.date;
+
+  if (session.type === 'breathwork' && session.free) {
+    const f = session.free;
+    const dh = Math.floor(f.durationMin / 60), dm = f.durationMin % 60;
+    const durStr = dh > 0 ? `${dh}h ${dm}m` : `${dm} min`;
+    const pName = BREATHWORK_PATTERNS[f.pattern]?.name || f.pattern;
+    document.getElementById('summary-stats').innerHTML = `
+      <div class="summary-stat"><div class="summary-stat-value">${durStr}</div><div class="summary-stat-label">Duration</div></div>
+      <div class="summary-stat"><div class="summary-stat-value">${f.rounds}</div><div class="summary-stat-label">Rounds</div></div>
+      <div class="summary-stat"><div class="summary-stat-value">${pName}</div><div class="summary-stat-label">Technique</div></div>
+    `;
+    document.getElementById('summary-prs').innerHTML = '';
+    document.getElementById('summary-exercises').innerHTML = '';
+    document.getElementById('summary-modal').classList.add('open');
+    return;
+  }
 
   if (session.type === 'free' && session.free) {
     const f = session.free;
@@ -3120,7 +3347,13 @@ function openHistory() {
       const typeInfo = TYPE_NAMES[sess.type] || { title: sess.type };
       const diffLine = sess.diff ? ` · ${cap(sess.diff)}` : '';
       let body2 = '';
-      if (sess.type === 'free' && sess.free) {
+      if (sess.type === 'breathwork' && sess.free) {
+        const f = sess.free;
+        const dh = Math.floor(f.durationMin / 60), dm = f.durationMin % 60;
+        const durStr = dh > 0 ? `${dh}h ${dm}m` : `${dm} min`;
+        const pName = BREATHWORK_PATTERNS[f.pattern]?.name || f.pattern;
+        body2 = `<div class="history-exercise"><strong>${pName}</strong> · ${durStr} · ${f.rounds} round${f.rounds !== 1 ? 's' : ''}</div>`;
+      } else if (sess.type === 'free' && sess.free) {
         const f = sess.free;
         const dh = Math.floor(f.durationMin / 60), dm = f.durationMin % 60;
         const durStr = dh > 0 ? `${dh}h ${dm}m` : `${dm} min`;
@@ -4090,7 +4323,19 @@ function openDayDetail(d, sessions) {
         <span style="font-weight:700;font-size:15px;">${TYPE_NAMES[sess.type]?.title || sess.type}</span>
         <span style="font-size:12px;color:var(--text2);margin-left:auto;">${cap(sess.diff)} · ${cap(sess.goal)}</span>
       </div>
-      ${sess.type === 'free' && sess.free ? (() => {
+      ${sess.type === 'breathwork' && sess.free ? (() => {
+        const f = sess.free;
+        const dh = Math.floor(f.durationMin / 60), dm = f.durationMin % 60;
+        const durStr = dh > 0 ? `${dh}h ${dm}m` : `${dm} min`;
+        const pName = BREATHWORK_PATTERNS[f.pattern]?.name || f.pattern;
+        return `<div style="background:var(--surface2);border-radius:12px;padding:12px 14px;margin-bottom:8px;">
+          <div style="display:flex;gap:16px;flex-wrap:wrap;">
+            <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Technique</div><div style="font-weight:700;color:var(--accent)">${pName}</div></div>
+            <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Duration</div><div style="font-weight:700">${durStr}</div></div>
+            <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Rounds</div><div style="font-weight:700">${f.rounds}</div></div>
+          </div>
+        </div>`;
+      })() : sess.type === 'free' && sess.free ? (() => {
         const f = sess.free;
         const dh = Math.floor(f.durationMin / 60), dm = f.durationMin % 60;
         const durStr = dh > 0 ? `${dh}h ${dm}m` : `${dm} min`;
