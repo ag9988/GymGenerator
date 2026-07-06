@@ -4383,15 +4383,15 @@ function generateAppIcon() {
   ctx.fillStyle = '#000000';
   ctx.fillRect(0, 0, size, size);
 
-  // Subtle orange radial glow
+  // Hot pink radial glow
   const grd = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size * 0.65);
-  grd.addColorStop(0, 'rgba(255,159,10,0.18)');
-  grd.addColorStop(1, 'rgba(255,159,10,0)');
+  grd.addColorStop(0, 'rgba(255,45,85,0.22)');
+  grd.addColorStop(1, 'rgba(255,45,85,0)');
   ctx.fillStyle = grd;
   ctx.fillRect(0, 0, size, size);
 
   // "Dr.G" main text
-  ctx.fillStyle = '#ff9f0a';
+  ctx.fillStyle = '#ff2d55';
   ctx.font = 'bold 68px -apple-system, SF Pro Rounded, Helvetica Neue, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
