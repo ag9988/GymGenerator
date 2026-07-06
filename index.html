@@ -2557,7 +2557,8 @@ function _endBreathworkSession() {
     free: { durationMin, pattern: _breathPattern, rounds: _breathRound },
     exercises: [],
   };
-  document.querySelector('.btn-finish').style.display = '';
+  document.getElementById('workout-plan').style.display = 'none';
+  document.getElementById('exercises-list').innerHTML = '';
   _breathSessionStart = null;
   _commitSession(session);
 }
@@ -3308,6 +3309,7 @@ function _downloadSummary(dataUrl) {
 }
 
 function finishWorkout() {
+  if (selectedType === 'breathwork' || selectedType === 'free') return;
   const doneSets = currentPlan.reduce((s, e) => s + e.sets.filter(x => x.done).length, 0);
   if (doneSets === 0) { toast('Log at least one set before saving!'); return; }
 
