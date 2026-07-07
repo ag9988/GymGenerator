@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Dr.G Gym">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" id="app-icon">
+  <title>Dr. G. Gym (API Edition)</title>
+  <style>
+    :root {
+      --bg:      #000000;
+      --surface: #1c1c1e;
+      --surface2:#2c2c2e;
+      --surface3:#3a3a3c;
+      --sep:     rgba(84,84,88,0.65);
+      --accent:  #ff2d55;
+      --text:    #ffffff;
+      --text2:   rgba(235,235,245,0.6);
+      --text3:   rgba(235,235,245,0.3);
+      --green:   #32d74b;
+      --red:     #ff453a;
+      --blue:    #0a84ff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
+      min-height: 100vh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Header */
+    header {
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 0.5px solid var(--sep);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo { display: flex; align-items: center; gap: 11px; }
+    .logo-icon {
+      width: 34px; height: 34px;
+      background: var(--accent);
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      color: #000; font-weight: 700; font-size: 16px;
+    }
+    .logo h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.4px; }
+    .logo span { color: var(--accent); }
+
+    /* Main container */
+    .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 0.5px solid var(--sep);
+    }
+
+    /* Buttons */
+    .btn {
+      background: var(--accent); color: #fff; border: none;
+      padding: 12px 20px; border-radius: 12px;
+      font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit;
+      transition: opacity 0.15s; width: 100%; text-align: center;
+    }
+    .btn:active { opacity: 0.82; }
+    .btn-secondary {
+      background: var(--surface2); color: var(--text);
+    }
+    .btn-secondary:active { background: var(--surface3); }
+
+    .btn-small {
+      background: var(--surface2); color: var(--text2);
+      padding: 6px 14px; border-radius: 9px;
+      font-size: 12px; font-weight: 600; display: inline-block;
+      border: none; cursor: pointer; font-family: inherit;
+    }
+
+    /* Form controls */
+    select, input {
+      background: var(--surface2);
+      color: var(--text);
+      border: 0.5px solid var(--sep);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+
+    /* Exercise list */
+    .exercise-item {
+      background: var(--surface2);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-left: 3px solid var(--accent);
+    }
+    .exercise-name { font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+    .set-item {
+      background: var(--surface3);
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    /* Session history */
+    .session-item {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-left: 3px solid var(--blue);
+    }
+    .session-type { font-weight: 600; font-size: 14px; }
+    .session-date { font-size: 12px; color: var(--text2); margin-top: 4px; }
+    .session-lp { font-size: 13px; color: var(--accent); margin-top: 4px; font-weight: 500; }
+
+    /* Hidden elements */
+    #import-file { display: none; }
+
+    /* Status messages */
+    .error { color: var(--red); font-size: 13px; margin-top: 8px; }
+    .success { color: var(--green); font-size: 13px; margin-top: 8px; }
+    .loading { color: var(--text2); font-size: 13px; font-style: italic; }
+
+    /* API Status */
+    .api-status {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 16px;
+      font-size: 12px;
+      color: var(--text2);
+      border-left: 3px solid var(--green);
+    }
+    .api-status.error { border-left-color: var(--red); }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 0; margin-bottom: 16px; border-bottom: 0.5px solid var(--sep); }
+    .tab-btn {
+      background: none; border: none; color: var(--text2);
+      padding: 12px 16px; cursor: pointer; font-family: inherit;
+      font-size: 14px; font-weight: 600;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <div class="logo-icon">💪</div>
+      <div>
+        <h1>Dr. G <span>Gym</span></h1>
+        <div class="logo-subtitle">API Edition</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- API Status -->
+    <div id="api-status" class="api-status">
+      <span id="api-status-text">Connecting to backend...</span>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('generate')">Generate</button>
+      <button class="tab-btn" onclick="switchTab('history')">History</button>
+      <button class="tab-btn" onclick="switchTab('stats')">Stats</button>
+    </div>
+
+    <!-- Generate Tab -->
+    <div id="tab-generate" class="tab-content active">
+      <div class="card">
+        <div style="margin-bottom: 12px; font-weight: 600;">Workout Settings</div>
+        <select id="workout-type" onchange="updateExerciseList()">
+          <option value="">Select workout type</option>
+          <option value="upper">Upper Body</option>
+          <option value="lower">Lower Body</option>
+          <option value="full">Full Body</option>
+          <option value="group_a">Group A</option>
+          <option value="group_b">Group B</option>
+          <option value="group_c">Group C</option>
+        </select>
+
+        <select id="difficulty">
+          <option value="">Select difficulty</option>
+          <option value="beginner">Beginner</option>
+          <option value="intermediate">Intermediate</option>
+          <option value="advanced">Advanced</option>
+        </select>
+
+        <select id="goal">
+          <option value="">Select goal</option>
+          <option value="strength">Strength (3-5 reps)</option>
+          <option value="hypertrophy">Hypertrophy (8-12 reps)</option>
+          <option value="endurance">Endurance (15-20 reps)</option>
+        </select>
+
+        <select id="unit">
+          <option value="lb">Pounds (lb)</option>
+          <option value="kg">Kilograms (kg)</option>
+        </select>
+
+        <button class="btn" onclick="generateWorkout()">Generate Workout</button>
+      </div>
+
+      <!-- Current Workout -->
+      <div id="current-workout" style="display: none;">
+        <div class="card">
+          <div style="margin-bottom: 12px; font-weight: 600;">Your Workout</div>
+          <div id="exercises-list"></div>
+          <button class="btn" onclick="saveWorkout()" style="margin-top: 12px;">Save Workout</button>
+          <div id="save-status"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Tab -->
+    <div id="tab-history" class="tab-content">
+      <div class="card">
+        <div style="margin-bottom: 12px; font-weight: 600;">Recent Workouts</div>
+        <button class="btn-small" onclick="loadHistory()" style="width: 100%; margin-bottom: 12px;">Refresh History</button>
+        <div id="history-list" style="max-height: 500px; overflow-y: auto;"></div>
+      </div>
+    </div>
+
+    <!-- Stats Tab -->
+    <div id="tab-stats" class="tab-content">
+      <div class="card">
+        <div style="margin-bottom: 12px; font-weight: 600;">Training Stats</div>
+        <button class="btn-small" onclick="loadStats()" style="width: 100%; margin-bottom: 12px;">Load Stats</button>
+        <div id="stats-volume" style="margin-bottom: 16px;">
+          <div style="font-size: 12px; color: var(--text2); margin-bottom: 8px;">Total Volume by Exercise (28 days)</div>
+          <div id="volume-list"></div>
+        </div>
+        <div id="stats-load">
+          <div style="font-size: 12px; color: var(--text2); margin-bottom: 8px;">Load Points Trend (28 days)</div>
+          <div id="load-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:8000';
+    let currentPlan = [];
+    let availableExercises = {};
+
+    // Check API connection on load
+    window.addEventListener('DOMContentLoaded', async () => {
+      await checkAPIStatus();
+      generateAppIcon();
+    });
+
+    async function checkAPIStatus() {
+      try {
+        const response = await fetch(`${API_URL}/health`);
+        if (response.ok) {
+          updateAPIStatus('Connected to backend ✓', false);
+        } else {
+          updateAPIStatus('Backend connection failed', true);
+        }
+      } catch (err) {
+        updateAPIStatus(`Cannot connect to ${API_URL}`, true);
+      }
+    }
+
+    function updateAPIStatus(text, isError) {
+      const statusEl = document.getElementById('api-status');
+      const statusText = document.getElementById('api-status-text');
+      statusText.textContent = text;
+      if (isError) {
+        statusEl.classList.add('error');
+      } else {
+        statusEl.classList.remove('error');
+      }
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    async function updateExerciseList() {
+      const workoutType = document.getElementById('workout-type').value;
+      if (!workoutType) return;
+
+      try {
+        const response = await fetch(`${API_URL}/api/utils/exercises?workout_type=${workoutType}`);
+        const exercises = await response.json();
+        availableExercises[workoutType] = exercises;
+      } catch (err) {
+        console.error('Failed to load exercises:', err);
+      }
+    }
+
+    async function generateWorkout() {
+      const type = document.getElementById('workout-type').value;
+      const difficulty = document.getElementById('difficulty').value;
+      const goal = document.getElementById('goal').value;
+      const unit = document.getElementById('unit').value;
+
+      if (!type || !difficulty || !goal) {
+        alert('Please select all options');
+        return;
+      }
+
+      const exercises = availableExercises[type] || [];
+      if (!exercises.length) {
+        await updateExerciseList();
+      }
+
+      // Simple shuffle and take first N exercises
+      const shuffled = [...exercises].sort(() => Math.random() - 0.5).slice(0, 5);
+
+      currentPlan = shuffled.map((ex, idx) => ({
+        name: ex.name,
+        order: idx,
+        sets: Array(3).fill(null).map((_, setIdx) => ({
+          weight: '',
+          reps: ex.reps[goal] || '8-12',
+          order: setIdx
+        }))
+      }));
+
+      renderCurrentWorkout();
+    }
+
+    function renderCurrentWorkout() {
+      const container = document.getElementById('exercises-list');
+      const workoutDiv = document.getElementById('current-workout');
+
+      if (!currentPlan.length) {
+        workoutDiv.style.display = 'none';
+        return;
+      }
+
+      workoutDiv.style.display = 'block';
+      container.innerHTML = currentPlan.map((ex, idx) => `
+        <div class="exercise-item">
+          <div class="exercise-name">${idx + 1}. ${ex.name}</div>
+          ${ex.sets.map((set, setIdx) => `
+            <div class="set-item">
+              Set ${setIdx + 1}:
+              <input type="text" placeholder="Weight" value="${set.weight}"
+                onchange="currentPlan[${idx}].sets[${setIdx}].weight = this.value"
+                style="width: 60px; display: inline; padding: 4px; margin: 0 4px;">
+              × <span>${set.reps}</span> reps
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+    }
+
+    async function saveWorkout() {
+      const type = document.getElementById('workout-type').value;
+      const difficulty = document.getElementById('difficulty').value;
+      const goal = document.getElementById('goal').value;
+      const unit = document.getElementById('unit').value;
+      const statusEl = document.getElementById('save-status');
+
+      const sessionData = {
+        type,
+        difficulty,
+        goal,
+        unit,
+        exercises: currentPlan,
+        session_lp: 0
+      };
+
+      try {
+        statusEl.innerHTML = '<div class="loading">Saving...</div>';
+        const response = await fetch(`${API_URL}/api/sessions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sessionData)
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        statusEl.innerHTML = `<div class="success">✓ Saved! Session ID: ${result.id}</div>`;
+        currentPlan = [];
+        renderCurrentWorkout();
+      } catch (err) {
+        statusEl.innerHTML = `<div class="error">✗ Failed to save: ${err.message}</div>`;
+      }
+    }
+
+    async function loadHistory() {
+      const historyList = document.getElementById('history-list');
+      try {
+        historyList.innerHTML = '<div class="loading">Loading...</div>';
+        const response = await fetch(`${API_URL}/api/sessions?limit=20`);
+        const sessions = await response.json();
+
+        if (!sessions.length) {
+          historyList.innerHTML = '<div style="color: var(--text2); font-size: 13px;">No workouts yet</div>';
+          return;
+        }
+
+        historyList.innerHTML = sessions.map(session => `
+          <div class="session-item">
+            <div class="session-type">${session.type.toUpperCase()} - ${session.difficulty || 'N/A'}</div>
+            <div class="session-date">${new Date(session.date).toLocaleDateString()}</div>
+            <div class="session-lp">Load Points: ${session.session_lp}</div>
+            <button class="btn-small" onclick="deleteSession(${session.id})" style="margin-top: 8px; background: var(--red); color: white;">Delete</button>
+          </div>
+        `).join('');
+      } catch (err) {
+        historyList.innerHTML = `<div class="error">Failed to load history: ${err.message}</div>`;
+      }
+    }
+
+    async function deleteSession(sessionId) {
+      if (!confirm('Delete this session?')) return;
+
+      try {
+        const response = await fetch(`${API_URL}/api/sessions/${sessionId}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          await loadHistory();
+        } else {
+          alert('Failed to delete session');
+        }
+      } catch (err) {
+        alert(`Error: ${err.message}`);
+      }
+    }
+
+    async function loadStats() {
+      const volumeList = document.getElementById('volume-list');
+      const loadList = document.getElementById('load-list');
+
+      try {
+        volumeList.innerHTML = '<div class="loading">Loading volume...</div>';
+        loadList.innerHTML = '<div class="loading">Loading load points...</div>';
+
+        // Fetch volume stats
+        const volumeResponse = await fetch(`${API_URL}/api/stats/volume`);
+        const volumeData = await volumeResponse.json();
+
+        if (Object.keys(volumeData).length) {
+          volumeList.innerHTML = Object.entries(volumeData)
+            .sort((a, b) => b[1] - a[1])
+            .map(([exercise, volume]) => `
+              <div class="set-item">
+                <strong>${exercise}</strong>: ${Math.round(volume)} lbs
+              </div>
+            `).join('');
+        } else {
+          volumeList.innerHTML = '<div style="color: var(--text2); font-size: 13px;">No volume data yet</div>';
+        }
+
+        // Fetch load trend
+        const loadResponse = await fetch(`${API_URL}/api/stats/load?days=28`);
+        const loadData = await loadResponse.json();
+
+        if (loadData.daily && loadData.daily.length) {
+          loadList.innerHTML = loadData.daily
+            .map(item => `
+              <div class="set-item">
+                ${item.date}: <strong>${item.load_points}</strong> LP
+              </div>
+            `).join('');
+        } else {
+          loadList.innerHTML = '<div style="color: var(--text2); font-size: 13px;">No load data yet</div>';
+        }
+      } catch (err) {
+        volumeList.innerHTML = `<div class="error">Error: ${err.message}</div>`;
+        loadList.innerHTML = `<div class="error">Error: ${err.message}</div>`;
+      }
+    }
+
+    function generateAppIcon() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 180;
+      canvas.height = 180;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, 180, 180);
+
+      const gradient = ctx.createRadialGradient(90, 90, 20, 90, 90, 120);
+      gradient.addColorStop(0, 'rgba(255,45,85,0.3)');
+      gradient.addColorStop(1, 'rgba(255,45,85,0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 180, 180);
+
+      ctx.fillStyle = '#ff2d55';
+      ctx.font = 'bold 68px -apple-system, BlinkMacSystemFont, "SF Pro Display"';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('G', 90, 75);
+
+      ctx.fillStyle = 'rgba(235,235,245,0.7)';
+      ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "SF Pro Display"';
+      ctx.fillText('G Y M', 90, 120);
+
+      const icon = document.getElementById('app-icon');
+      icon.href = canvas.toDataURL();
+    }
+  </script>
+</body>
+</html>

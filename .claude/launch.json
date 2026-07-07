@@ -1,0 +1,41 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "travel-widget",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "3456", "travel"],
+      "port": 3456
+    },
+    {
+      "name": "gantt-chart",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "3457", "gantt"],
+      "port": 3457
+    },
+    {
+      "name": "chord-generator",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "3458", "chord-generator"],
+      "port": 3458
+    },
+    {
+      "name": "gym-app",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "3459", "gym planning"],
+      "port": 3459
+    },
+    {
+      "name": "gym-backend",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8000"],
+      "port": 8000
+    },
+    {
+      "name": "gym-frontend",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8080"],
+      "port": 8080
+    }
+  ]
+}
