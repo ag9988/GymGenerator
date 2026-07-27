@@ -1322,6 +1322,10 @@
       </div>
     </div>
     <div class="rpe-preview" id="rpe-preview"></div>
+    <div class="cardio-field">
+      <label>Date</label>
+      <input class="cardio-input" id="rpe-date" type="date" style="width:160px">
+    </div>
     <button class="btn-add-custom" onclick="saveRPESession()">Save Session</button>
   </div>
 </div>
@@ -1358,6 +1362,10 @@
     <div class="cardio-field">
       <label>Notes <span style="color:var(--text3)">(optional)</span></label>
       <textarea class="cardio-input" id="free-notes" rows="3" placeholder="How did it feel?" style="width:100%;box-sizing:border-box;resize:none;font-family:inherit;font-size:15px;line-height:1.4"></textarea>
+    </div>
+    <div class="cardio-field">
+      <label>Date</label>
+      <input class="cardio-input" id="free-date" type="date" style="width:160px">
     </div>
     <div class="rpe-preview" id="free-lp-preview"></div>
     <button class="btn-add-custom" onclick="saveFreeSession()">Save Session</button>
@@ -1413,6 +1421,10 @@
     <div class="cardio-field">
       <label>Notes <span>(optional)</span></label>
       <input class="cardio-input" id="cardio-notes" type="text" placeholder="Easy effort, trail, etc.">
+    </div>
+    <div class="cardio-field">
+      <label>Date</label>
+      <input class="cardio-input" id="cardio-date" type="date" style="width:160px">
     </div>
     <button class="btn-add-custom" onclick="saveCardioSession()">Save Session</button>
   </div>
@@ -2412,6 +2424,7 @@ function openRPE(session) {
   _rpeSession = session;
   _selectedRPE = 7;
   document.getElementById('rpe-duration').value = '';
+  document.getElementById('rpe-date').value = new Date().toISOString().slice(0, 10);
   document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('active'));
   document.querySelector(`.rpe-btn[data-rpe="7"]`)?.classList.add('active');
   _updateRPEPreview();
@@ -2447,6 +2460,8 @@ function saveRPESession() {
   _rpeSession.durationMin = dur;
   _rpeSession.rpe         = _selectedRPE;
   _rpeSession.sessionLP   = Math.round(dur * _selectedRPE / 4);
+  const dateVal = document.getElementById('rpe-date').value;
+  if (dateVal) _rpeSession.date = new Date(dateVal + 'T12:00:00').toLocaleString();
   document.getElementById('rpe-modal').classList.remove('open');
   _commitSession(_rpeSession);
   _rpeSession = null;
@@ -2635,6 +2650,7 @@ function endFreeSession() {
 
   document.getElementById('free-hr').value = '';
   document.getElementById('free-notes').value = '';
+  document.getElementById('free-date').value = new Date().toISOString().slice(0, 10);
   document.getElementById('free-end-modal').classList.add('open');
 }
 
@@ -2659,9 +2675,11 @@ function saveFreeSession() {
   const hr = parseInt(document.getElementById('free-hr').value) || null;
   const notes = document.getElementById('free-notes').value.trim() || null;
   const lp = Math.round(_freeDurationMin * _selectedFreeRPE / 4);
+  const dateVal = document.getElementById('free-date').value;
+  const dateStr = dateVal ? new Date(dateVal + 'T12:00:00').toLocaleString() : new Date().toLocaleString();
   const session = {
     id: Date.now(),
-    date: new Date().toLocaleString(),
+    date: dateStr,
     type: 'free',
     sessionLP: lp,
     free: { durationMin: _freeDurationMin, rpe: _selectedFreeRPE, avgHR: hr, notes },
@@ -2689,6 +2707,7 @@ function openCardioLog(type) {
   // Reset form
   ['cardio-dist','cardio-dur-h','cardio-dur-m','cardio-dur-s','cardio-elev','cardio-hr','cardio-notes']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('cardio-date').value = new Date().toISOString().slice(0, 10);
   document.getElementById('cardio-pace-row').textContent = 'Pace: —';
 
   // Unit defaults
@@ -2789,9 +2808,11 @@ function saveCardioSession() {
 
   if (!dist || (h + m + s === 0)) { toast('Enter distance and duration!'); return; }
 
+  const dateVal = document.getElementById('cardio-date').value;
+  const dateStr = dateVal ? new Date(dateVal + 'T12:00:00').toLocaleString() : new Date().toLocaleString();
   const session = {
     id:   Date.now(),
-    date: new Date().toLocaleString(),
+    date: dateStr,
     type: _cardioType,
     cardio: {
       distance:  dist,
